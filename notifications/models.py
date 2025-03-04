@@ -3,7 +3,7 @@ from accounts.models import User
 
 
 class Notification(models.Model):
-    recipient: User = models.ForeignKey(
+    recipient = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="notifications"
     )
     message = models.TextField()
@@ -11,5 +11,4 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        recipient_username = getattr(self.recipient, "username", "Unknown User")
-        return f"Notification for {recipient_username}: {str(self.message)[:50]}"
+        return f"Notification for {self.recipient.username}: {str(self.message)[:50]}"

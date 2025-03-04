@@ -26,7 +26,7 @@ class CourseMaterial(models.Model):
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{getattr(self, 'title', 'Unknown Title')} - {getattr(self.course, 'title', 'Unknown Course')}"
+        return f"{self.title} - {self.course.title}"
 
 
 class Enrollment(models.Model):
@@ -41,7 +41,7 @@ class Enrollment(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"{getattr(self.student, 'username', 'Unknown User')} - {getattr(self.course, 'title', 'Unknown Course')}"
+        return f"{self.student.username} - {self.course.title}"
 
 
 class Feedback(models.Model):
@@ -55,4 +55,4 @@ class Feedback(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Feedback by {getattr(self.student, 'username', 'Unknown User')} for {getattr(self.course, 'title', 'Unknown Course')}"
+        return f"Feedback by {self.student.username} for {self.course.title}"
