@@ -9,6 +9,7 @@ from rest_framework import status
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework.exceptions import ValidationError
+from rest_framework_simplejwt.tokens import AccessToken
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -43,7 +44,12 @@ class UserRegistrationView(generics.CreateAPIView):
         try:
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            user = serializer.instance  # Get the created user instance
+            token = AccessToken.for_user(user)  # Generate token for the user
+            return Response(
+                {"user": serializer.data, "token": str(token)},
+                status=status.HTTP_201_CREATED,
+            )
         except ValidationError as e:
             # Return a custom error message for username uniqueness
             if "username" in e.detail:
