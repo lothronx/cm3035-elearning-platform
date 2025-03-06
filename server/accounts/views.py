@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+from rest_framework.exceptions import ValidationError
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -38,9 +39,19 @@ class UserRegistrationView(generics.CreateAPIView):
         validated_data = request.data.copy()
         validated_data["role"] = request.data.get("role")
         serializer = self.get_serializer(data=validated_data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            # Return a custom error message for username uniqueness
+            if "username" in e.detail:
+                return Response(
+                    {"error": "Username already exists."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserLogoutView(generics.GenericAPIView):

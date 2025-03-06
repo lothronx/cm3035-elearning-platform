@@ -6,7 +6,7 @@ router = DefaultRouter()
 router.register(r"users", UserViewSet)
 
 urlpatterns = [
-    path("register/", UserRegistrationView.as_view(), name="user-register"),
-    path("logout/", UserLogoutView.as_view(), name="user-logout"),
+    path("api/register/", UserRegistrationView.as_view(), name="user-register"),
+    path("api/logout/", UserLogoutView.as_view(), name="user-logout"),
     path("api/", include(router.urls)),
 ]

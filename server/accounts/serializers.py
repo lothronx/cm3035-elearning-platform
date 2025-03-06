@@ -12,13 +12,16 @@ class UserSerializer(serializers.ModelSerializer):
             "role",
             "photo",
             "status",
-            "email",
             "first_name",
             "last_name",
             "is_active",
             "date_joined",
         ]
-        extra_kwargs = {"password": {"write_only": True}}
+        extra_kwargs = {
+            "password": {"write_only": True},
+            "photo": {"required": False},
+            "status": {"required": False},
+        }
         read_only_fields = ["id", "date_joined", "is_active"]
 
     def create(self, validated_data):
