@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.contrib.auth.hashers import make_password
 from .models import User
 
 
@@ -9,6 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "username",
+            "password",
             "role",
             "photo",
             "status",
@@ -18,16 +18,11 @@ class UserSerializer(serializers.ModelSerializer):
             "is_active",
             "date_joined",
         ]
-        read_only_fields = ["id", "role", "date_joined", "is_active"]
+        extra_kwargs = {"password": {"write_only": True}}
+        read_only_fields = ["id", "date_joined", "is_active"]
 
     def create(self, validated_data):
-        # Hash the password before saving
-        validated_data["password"] = make_password(validated_data.get("password"))
-        return super().create(validated_data)
-
-    def update(self, instance, validated_data):
-        # Hash the password if it's being updated
-        password = validated_data.pop("password", None)
-        if password:
-            instance.password = make_password(password)
-        return super().update(instance, validated_data)
+        user = User(**validated_data)
+        user.set_password(validated_data["password"])
+        user.save()
+        return user
