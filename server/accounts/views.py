@@ -43,10 +43,6 @@ class UserRegistrationView(generics.CreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class UserLoginView(TokenObtainPairView):
-    pass
-
-
 class UserLogoutView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
