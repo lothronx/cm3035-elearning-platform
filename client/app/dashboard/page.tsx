@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import { Navbar } from "@/components/navbar";
 import { PersonalDetails } from "@/components/dashboard/personal-details";
 import { MyCourses } from "@/components/dashboard/my-courses";
@@ -77,6 +77,7 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error(error);
+      toast.error("Failed to update status. Please try again.");
     }
   };
 
@@ -108,7 +109,7 @@ export default function Dashboard() {
       setUserData((prev) => ({ ...prev, photo: data.photo }));
     } catch (error) {
       console.error("Error uploading photo:", error);
-      throw error;
+      toast.error("Failed to upload photo. Please try again.");
     }
   };
 

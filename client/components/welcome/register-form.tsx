@@ -139,13 +139,39 @@ export function RegisterForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Handle server errors
-        if (data.error === "Username already exists.") {
-          setErrors({ username: "Username already exists." });
+        // Process validation errors from the backend
+        if (response.status === 400) {
+          // Map backend field names to frontend field names
+          const fieldMapping: Record<string, keyof FormErrors> = {
+            username: "username",
+            password: "password",
+            first_name: "firstName",
+            last_name: "lastName",
+            role: "role",
+            error: "server",
+          };
+
+          const newErrors: FormErrors = {};
+
+          // Process each error field from the backend
+          Object.entries(data).forEach(([field, message]) => {
+            const frontendField = fieldMapping[field] || (field as keyof FormErrors);
+            newErrors[frontendField] = message as string;
+          });
+
+          setErrors(newErrors);
+
+          // Show toast for the first error
+          const firstError = Object.values(newErrors)[0];
+          if (firstError) {
+            toast.error(firstError);
+          }
         } else {
-          setErrors({ server: data.message || "Registration failed. Please try again." });
+          // Generic error
+          setErrors({ server: "Registration failed. Please try again." });
+          toast.error("Registration failed");
         }
-        throw new Error(data.message || "Registration failed");
+        return;
       }
 
       // Reset form
@@ -163,9 +189,8 @@ export function RegisterForm() {
       router.push("/dashboard");
     } catch (error) {
       console.error(error);
-      if (!errors.server) {
-        toast.error("Failed to register. Please try again.");
-      }
+      setErrors({ server: "An unexpected error occurred. Please try again." });
+      toast.error("Failed to register. Please try again.");
     } finally {
       setIsLoading(false);
     }

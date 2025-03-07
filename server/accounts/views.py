@@ -125,8 +125,28 @@ class UserDashboardView(viewsets.ViewSet):
     @action(detail=False, methods=["patch"], url_path="patch-status")
     def patch_status(self, request):
         user = request.user
-        user.status = request.data.get("status", user.status)
-        user.save()
+        new_status = request.data.get("status")
+
+        # Validate the status value - ensure it's a string and not too long
+        if new_status:
+            if not isinstance(new_status, str):
+                return Response(
+                    {"detail": "Status must be a text description"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Add a maximum length check if needed
+            if len(new_status) > 255:
+                return Response(
+                    {
+                        "detail": "Status description is too long (maximum 500 characters)"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            user.status = new_status
+            user.save()
+
         return Response(
             {
                 "status": user.status,
@@ -137,13 +157,33 @@ class UserDashboardView(viewsets.ViewSet):
     @action(detail=False, methods=["patch"], url_path="patch-photo")
     def patch_photo(self, request):
         user = request.user
-        if "photo" in request.FILES:
+
+        if "photo" not in request.FILES:
+            return Response(
+                {"detail": "No photo provided in the request"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
             user.photo = request.FILES["photo"]
             user.save()
-        return Response(
-            {"photo": request.build_absolute_uri(user.photo.url)},
-            status=status.HTTP_200_OK,
-        )
+
+            # Check if the photo was successfully saved
+            if user.photo:
+                return Response(
+                    {"photo": request.build_absolute_uri(user.photo.url)},
+                    status=status.HTTP_200_OK,
+                )
+            else:
+                return Response(
+                    {"detail": "Failed to save the photo"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+        except Exception as e:
+            return Response(
+                {"detail": f"Error updating photo: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class UserProfileView(viewsets.ViewSet):
