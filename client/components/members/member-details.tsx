@@ -2,6 +2,10 @@
 
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { MessageCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/contexts/user-context";
 
 interface MemberDetailsProps {
   userData: {
@@ -14,6 +18,10 @@ interface MemberDetailsProps {
 }
 
 export function MemberDetails({ userData }: MemberDetailsProps) {
+  const router = useRouter();
+  const { firstName, lastName } = useUser();
+  const isOwnProfile = firstName === userData.firstName && lastName === userData.lastName;
+
   return (
     <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
       <CardContent className="p-0">
@@ -31,7 +39,7 @@ export function MemberDetails({ userData }: MemberDetailsProps) {
             </div>
           </div>
 
-          {/* Name and Status - Right Side */}
+          {/* Name and Status - Middle */}
           <div className="flex flex-1 flex-col gap-3 text-center sm:text-left">
             <div className="flex flex-col items-center sm:flex-row sm:items-center sm:gap-2">
               <h3 className="text-2xl font-medium tracking-tight text-secondary">
@@ -47,6 +55,23 @@ export function MemberDetails({ userData }: MemberDetailsProps) {
               <p className="text-sm text-slate-600 dark:text-slate-300">{userData.status}</p>
             </div>
           </div>
+
+          {/* Chat Button - Right Side */}
+          {!isOwnProfile && (
+            <div className="flex items-center">
+              <Button
+                onClick={() =>
+                  router.push(
+                    `/chat/${userData.firstName.toLowerCase()}-${userData.lastName.toLowerCase()}`
+                  )
+                }
+                variant="outline"
+                className="bg-secondary text-primary-foreground hover:bg-secondary/90">
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Chat with me
+              </Button>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
