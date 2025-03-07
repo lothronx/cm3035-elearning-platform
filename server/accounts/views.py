@@ -205,8 +205,10 @@ class UserViewSet(viewsets.ViewSet):
         """
         List all users - only accessible to teachers
         Returns photos, role, first_name, last_name, username, status
+        Excludes superusers for security reasons
         """
-        users = User.objects.all()
+        # Exclude superusers and admin users from the results
+        users = User.objects.filter(is_superuser=False, is_staff=False)
         user_data = []
 
         for user in users:
