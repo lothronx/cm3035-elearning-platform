@@ -108,7 +108,7 @@ export default function CourseList() {
             <Card
               key={course.id}
               onClick={() => handleOpenCourse(course.id)}
-              className="flex flex-col h-full bg-background-light">
+              className="flex flex-col h-full  bg-background-light transition-all duration-300 hover:border-primary/20 hover:shadow-md">
               <CardHeader className="flex flex-row items-center gap-4">
                 <div className="bg-primary text-primary-foreground p-3 rounded-full">
                   <BookOpen className="h-6 w-6" />
@@ -118,7 +118,7 @@ export default function CourseList() {
                   <p className="text-sm text-muted-foreground">by {course.teacher}</p>
                 </div>
               </CardHeader>
-              <CardContent className="flex-grow">
+              <CardContent className="flex-grow ">
                 <p className="text-muted-foreground">{course.description}</p>
                 <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
@@ -133,7 +133,10 @@ export default function CourseList() {
                 <Button
                   className="w-full disabled:bg-secondary"
                   disabled={course.enrolled}
-                  onClick={() => handleEnroll(course.id)}>
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEnroll(course.id);
+                  }}>
                   {course.enrolled ? "Enrolled" : "Enroll Now"}
                 </Button>
               </CardFooter>
