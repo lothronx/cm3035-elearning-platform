@@ -19,7 +19,7 @@ interface EnrolledCoursesProps {
 
 export function EnrolledCourses({ courses }: EnrolledCoursesProps) {
   return (
-    <Card className="border-none bg-background shadow-sm transition-all duration-300 dark:bg-slate-900">
+    <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
       <CardHeader className="pb-2">
         <CardTitle className="text-xl font-medium text-secondary">My Courses</CardTitle>
       </CardHeader>

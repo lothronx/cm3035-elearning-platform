@@ -11,6 +11,7 @@ from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from courses.models import Enrollment
+from rest_framework.decorators import action
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -60,16 +61,11 @@ class UserLogoutView(generics.GenericAPIView):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserDashboardView(generics.GenericAPIView):
+class UserDashboardView(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def list(self, request):
         user = request.user
-        if user.photo:
-            photo_url = request.build_absolute_uri(user.photo.url)
-        else:
-            photo_url = None
-
         queryset = Enrollment.objects.filter(student=user)
         enrollments = EnrollmentSerializer(queryset, many=True).data
         courses = [
@@ -81,9 +77,34 @@ class UserDashboardView(generics.GenericAPIView):
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "role": user.role,
-                "photo": photo_url,
+                "photo": (
+                    request.build_absolute_uri(user.photo.url) if user.photo else None
+                ),
                 "status": user.status,
                 "courses": courses,
             },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=['patch'], url_path='patch-status')
+    def patch_status(self, request):
+        user = request.user
+        user.status = request.data.get("status", user.status)
+        user.save()
+        return Response(
+            {
+                "status": user.status,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=['patch'], url_path='patch-photo')
+    def patch_photo(self, request):
+        user = request.user
+        if "photo" in request.FILES:
+            user.photo = request.FILES["photo"]
+            user.save()
+        return Response(
+            {"photo": request.build_absolute_uri(user.photo.url)},
             status=status.HTTP_200_OK,
         )

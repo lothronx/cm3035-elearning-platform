@@ -5,7 +5,7 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, LogOut, Search, Settings, Menu } from "lucide-react";
+import { Bell, LogOut, Search, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { handleUnauthorized } from "@/lib/auth";
 
 // Mock notifications - in a real app, these would come from an API
@@ -75,7 +74,7 @@ export function DashboardNavbar() {
       className={`fixed top-0 z-10 w-full border-b bg-primary backdrop-blur-md transition-all duration-300 dark:bg-slate-950/80 ${
         isScrolled ? "shadow-sm" : ""
       }`}>
-      <div className="container flex h-16 items-center justify-between px-16">
+      <div className="container mx-auto flex h-16 items-center justify-between w-full px-4">
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="text-2xl font-bold text-secondary">
             E-Learning
@@ -99,7 +98,7 @@ export function DashboardNavbar() {
             <Input
               type="search"
               placeholder="Search courses..."
-              className="w-full max-w-[200px] bg-background border-slate-200 pl-8 text-sm transition-all focus:max-w-xs dark:border-slate-700 lg:max-w-xs"
+              className="w-full max-w-[200px] bg-background-light border-slate-200 pl-8 text-sm transition-all focus:max-w-xs dark:border-slate-700 lg:max-w-xs"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -185,50 +184,6 @@ export function DashboardNavbar() {
             <LogOut className="h-4 w-4" />
             <span className="sr-only">Log out</span>
           </Button>
-
-          {/* Mobile Menu */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="ml-1 aspect-square h-9 md:hidden">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[250px] sm:w-[300px]">
-              <div className="flex h-full flex-col">
-                <div className="border-b pb-4 pt-2">
-                  <form onSubmit={handleSearch} className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                    <Input
-                      type="search"
-                      placeholder="Search courses..."
-                      className="w-full border-slate-200 pl-8 text-sm dark:border-slate-700"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </form>
-                </div>
-                <nav className="flex-1 space-y-1 py-4">
-                  <Link
-                    href="/courses"
-                    className="flex items-center rounded-md px-3 py-2 text-sm hover:bg-primary-foreground dark:hover:bg-primary">
-                    Browse Courses
-                  </Link>
-                  <Link
-                    href="/settings"
-                    className="flex items-center rounded-md px-3 py-2 text-sm hover:bg-primary-foreground dark:hover:bg-primary">
-                    Settings
-                  </Link>
-                </nav>
-                <div className="border-t pt-4">
-                  <Button variant="outline" className="w-full justify-start" onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
-                  </Button>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
         </div>
       </div>
     </header>

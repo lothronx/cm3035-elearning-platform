@@ -25,7 +25,7 @@ export default function StudentDashboard() {
     const fetchData = async () => {
       try {
         const isAuthenticated = await checkAuthStatus();
-        console.log("isAuthenticated", isAuthenticated);
+
         if (!isAuthenticated) {
           handleUnauthorized(router);
         } else {
@@ -49,14 +49,61 @@ export default function StudentDashboard() {
     fetchData();
   }, []);
 
-  const updateStatus = (newStatus: string) => {
-    setUserData((prev) => ({ ...prev, status: newStatus }));
-    // In a real app, you would also update this on the server
+  const updateStatus = async (newStatus: string) => {
+    try {
+      const isAuthenticated = await checkAuthStatus();
+
+      if (!isAuthenticated) {
+        handleUnauthorized(router);
+      } else {
+        const response = await fetchWithAuth(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/patch-status/`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ status: newStatus }),
+          }
+        );
+        const data = await response.json();
+
+        setUserData((prev) => ({ ...prev, status: data.status }));
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const updatePhoto = (newPictureUrl: string) => {
-    setUserData((prev) => ({ ...prev, photo: newPictureUrl }));
-    // In a real app, you would also update this on the server
+  const updatePhoto = async (file: File): Promise<void> => {
+    try {
+      const isAuthenticated = await checkAuthStatus();
+
+      if (!isAuthenticated) {
+        handleUnauthorized(router);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/patch-photo/`,
+        {
+          method: 'PATCH',
+          body: formData,        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const data = await response.json();
+      setUserData((prev) => ({ ...prev, photo: data.photo }));
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      throw error; 
+    }
   };
 
   return (

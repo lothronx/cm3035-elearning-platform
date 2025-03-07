@@ -3,9 +3,10 @@ from rest_framework.routers import DefaultRouter
 from .views import UserRegistrationView, UserLogoutView, UserDashboardView
 
 router = DefaultRouter()
+router.register(r'dashboard', UserDashboardView, basename='user-dashboard')
 
 urlpatterns = [
-    path("register/", UserRegistrationView.as_view(), name="user-register"),
-    path("logout/", UserLogoutView.as_view(), name="user-logout"),
-    path("dashboard/", UserDashboardView.as_view(), name="user-dashboard"),
+    path('', include(router.urls)),
+    path('register/', UserRegistrationView.as_view(), name='register'),
+    path('logout/', UserLogoutView.as_view(), name='logout'),
 ]

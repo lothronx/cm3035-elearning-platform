@@ -172,7 +172,7 @@ export function RegisterForm() {
   };
 
   return (
-    <Card>
+    <Card className="bg-background-light">
       <CardHeader>
         <CardTitle className="text-2xl">Register</CardTitle>
         <CardDescription>Create an account to start learning</CardDescription>

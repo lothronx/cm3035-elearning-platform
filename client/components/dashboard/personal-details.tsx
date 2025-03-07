@@ -10,7 +10,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Camera, Pencil, Check, X } from "lucide-react";
-
 import {
   Dialog,
   DialogContent,
@@ -28,7 +27,7 @@ interface PersonalDetailsProps {
     status: string;
   };
   onStatusUpdate: (newStatus: string) => void;
-  onPhotoUpdate: (newPictureUrl: string) => void;
+  onPhotoUpdate: (file: File) => Promise<void>;
 }
 
 export function PersonalDetails({ userData, onStatusUpdate, onPhotoUpdate }: PersonalDetailsProps) {
@@ -67,22 +66,21 @@ export function PersonalDetails({ userData, onStatusUpdate, onPhotoUpdate }: Per
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // In a real app, you would upload the file to a server
-    // and get back a URL to the uploaded image
     setIsUploadingImage(true);
-
-    // Simulate upload delay
-    setTimeout(() => {
-      // For demo purposes, we're just using a placeholder
-      // In a real app, this would be the URL returned from your API
-      onPhotoUpdate(`/placeholder.svg?height=200&width=200&text=${file.name}`);
-      setIsUploadingImage(false);
-      toast.success("Profile picture updated");
-    }, 1500);
+    onPhotoUpdate(file)
+      .then(() => {
+        toast.success("Profile picture updated");
+      })
+      .catch(() => {
+        toast.error("Failed to update profile picture");
+      })
+      .finally(() => {
+        setIsUploadingImage(false);
+      });
   };
 
   return (
-    <Card className="overflow-hidden border-none bg-primaryy shadow-sm transition-all duration-300 dark:bg-slate-900">
+    <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
       <CardContent className="p-0">
         <div className="flex flex-col items-center gap-6 p-6 sm:flex-row">
           {/* Profile Picture - Left Side */}
@@ -105,9 +103,9 @@ export function PersonalDetails({ userData, onStatusUpdate, onPhotoUpdate }: Per
                   <Camera className="h-4 w-4 text-primary-foreground" />
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="bg-background-light">
                 <DialogHeader>
-                  <DialogTitle>Update Profile Picture</DialogTitle>
+                  <DialogTitle className="text-secondary">Update Profile Picture</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="flex justify-center">
@@ -127,6 +125,7 @@ export function PersonalDetails({ userData, onStatusUpdate, onPhotoUpdate }: Per
                       id="picture"
                       type="file"
                       accept="image/*"
+                      className="bg-background"
                       onChange={handleImageUpload}
                       disabled={isUploadingImage}
                     />

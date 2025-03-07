@@ -53,7 +53,7 @@ export function LoginForm() {
   };
 
   return (
-    <Card>
+    <Card className="bg-background-light">
       <CardHeader>
         <CardTitle className="text-2xl text-primary">Login</CardTitle>
         <CardDescription>Enter your credentials to access your account</CardDescription>
