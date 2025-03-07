@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Camera, Pencil, Check, X } from "lucide-react";
 import {
   Dialog,
@@ -144,9 +145,9 @@ export function PersonalDetails({ userData, onStatusUpdate, onPhotoUpdate }: Per
               <h3 className="text-2xl font-medium tracking-tight text-secondary">
                 {userData.firstName} {userData.lastName}
               </h3>
-              <span className="mt-1 rounded-full bg-primary px-2.5 py-0.5 text-xs font-medium text-primary-foreground sm:mt-0">
+              <Badge variant={userData.role === "teacher" ? "default" : "secondary"}>
                 {userData.role}
-              </span>
+              </Badge>
             </div>
 
             {/* Status */}
