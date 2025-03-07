@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { handleUnauthorized } from "@/lib/auth";
 
 // Mock notifications - in a real app, these would come from an API
 const mockNotifications = [
@@ -48,9 +49,20 @@ export function DashboardNavbar() {
     }
   };
 
-  const handleLogout = () => {
-    toast.success("Logged out successfully");
-    // router.push("/")
+  const handleLogout = async () => {
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/logout/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        },
+      });
+
+      handleUnauthorized(router);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   const markAllAsRead = () => {

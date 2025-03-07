@@ -6,8 +6,12 @@ import { DashboardNavbar } from "@/components/dashboard/navbar";
 import { PersonalDetails } from "@/components/dashboard/personal-details";
 import { EnrolledCourses } from "@/components/dashboard/enrolled-courses";
 import { ChatBox } from "@/components/dashboard/chat-box";
+import { useRouter } from "next/navigation";
+import { handleUnauthorized, fetchWithAuth, checkAuthStatus } from "@/lib/auth";
 
 export default function StudentDashboard() {
+  const router = useRouter();
+
   const [userData, setUserData] = useState({
     firstName: "",
     lastName: "",
@@ -18,40 +22,31 @@ export default function StudentDashboard() {
   });
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const accessToken = localStorage.getItem("accessToken");
-      if (!accessToken) return;
-
+    const fetchData = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        });
+        const isAuthenticated = await checkAuthStatus();
+        console.log("isAuthenticated", isAuthenticated);
+        if (!isAuthenticated) {
+          handleUnauthorized(router);
+        } else {
+          const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/`);
+          const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+          setUserData({
+            firstName: data.first_name,
+            lastName: data.last_name,
+            role: data.role,
+            photo: data.photo,
+            status: data.status,
+            courses: data.courses,
+          });
         }
-
-        const data = await response.json();
-
-        setUserData({
-          firstName: data.first_name,
-          lastName: data.last_name,
-          role: data.role,
-          photo: data.photo,
-          status: data.status,
-          courses: data.courses,
-        });
-        console.log(data.courses);
       } catch (error) {
-        console.error("Failed to fetch user data:", error);
+        console.error(error);
       }
     };
 
-    fetchUserData();
+    fetchData();
   }, []);
 
   const updateStatus = (newStatus: string) => {

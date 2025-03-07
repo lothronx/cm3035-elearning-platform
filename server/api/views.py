@@ -72,7 +72,10 @@ class UserDashboardView(generics.GenericAPIView):
 
         queryset = Enrollment.objects.filter(student=user)
         enrollments = EnrollmentSerializer(queryset, many=True).data
-        courses = [{"id": enrollment["course_id"], "name": enrollment["course"]} for enrollment in enrollments]
+        courses = [
+            {"id": enrollment["course_id"], "name": enrollment["course"]}
+            for enrollment in enrollments
+        ]
         return Response(
             {
                 "first_name": user.first_name,

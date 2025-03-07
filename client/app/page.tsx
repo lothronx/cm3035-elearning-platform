@@ -1,12 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Toaster } from "sonner";
 import { LoginForm } from "@/components/login-form";
 import { RegisterForm } from "@/components/register-form";
+import { checkAuthStatus } from "@/lib/auth";
 
 export default function WelcomePage() {
+  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const isAuthenticated = await checkAuthStatus();
+      if (isAuthenticated) {
+        router.push("/dashboard");
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
