@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BookOpen, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/contexts/user-context";
 
 interface Course {
   id: number;
   name: string;
-  progress?: number;
-  lastAccessed?: Date;
+  is_active: boolean;
 }
 
 interface MyCoursesProps {
@@ -42,9 +42,15 @@ export function MyCourses({ courses }: MyCoursesProps) {
               <Link key={course.id} href={`/courses/${course.id}`} className="group block">
                 <div className="rounded-xl border-dashed border-2 border-background bg-background-light p-4 shadow-sm transition-all duration-300 hover:bg-primary/10 hover:shadow-md ">
                   <div className="mb-3 flex items-center">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                      <BookOpen className="h-4 w-4" />
-                    </div>
+                    <Badge variant={course.is_active ? "default" : "outline"}>
+                      {isTeacher
+                        ? course.is_active
+                          ? "Active"
+                          : "Deactivated"
+                        : course.is_active
+                        ? "Enrolled"
+                        : "Completed"}
+                    </Badge>
                   </div>
 
                   <h3 className="text-base font-medium text-secondary group-hover:text-secondary">

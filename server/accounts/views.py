@@ -93,21 +93,25 @@ class DashboardViewSet(viewsets.ViewSet):
 
         if user.role == "teacher":
             # For teachers, get courses they teach
-            queryset = Course.objects.filter(teacher=user)
+            queryset = Course.objects.filter(teacher=user).order_by("-is_active")
             courses_taught = CourseSerializer(queryset, many=True).data
             courses = [
-                {"id": course["id"], "name": course["title"]}
+                {
+                    "id": course["id"],
+                    "name": course["title"],
+                    "is_active": course["is_active"],
+                }
                 for course in courses_taught
             ]
         else:
             # For students, get enrolled courses
-            queryset = Enrollment.objects.filter(student=user)
+            queryset = Enrollment.objects.filter(student=user).order_by("is_completed")
             enrollments = EnrollmentSerializer(queryset, many=True).data
             courses = [
                 {
                     "id": enrollment["course_id"],
                     "name": enrollment["course"],
-                    "is_active": enrollment["is_completed"],
+                    "is_active": not enrollment["is_completed"],
                 }
                 for enrollment in enrollments
             ]
@@ -240,26 +244,24 @@ class UserViewSet(viewsets.ViewSet):
             courses = []
 
             if user.role == "teacher":
-                # For teachers, get courses they teach
-                queryset = Course.objects.filter(teacher=user)
+                # For teachers, get the active courses they teach
+                queryset = Course.objects.filter(teacher=user, is_active=True)
                 courses_taught = CourseSerializer(queryset, many=True).data
                 courses = [
                     {
                         "id": course["id"],
                         "name": course["title"],
-                        "is_active": course["is_active"],
                     }
                     for course in courses_taught
                 ]
             else:
-                # For students, get enrolled courses
-                queryset = Enrollment.objects.filter(student=user)
+                # For students, get enrolled but not completed courses
+                queryset = Enrollment.objects.filter(student=user, is_completed=False)
                 enrollments = EnrollmentSerializer(queryset, many=True).data
                 courses = [
                     {
                         "id": enrollment["course_id"],
                         "name": enrollment["course"],
-                        "is_active": not enrollment["is_completed"],
                     }
                     for enrollment in enrollments
                 ]

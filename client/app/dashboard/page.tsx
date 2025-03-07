@@ -42,7 +42,7 @@ export default function Dashboard() {
             status: data.status,
             courses: data.courses,
           });
-
+           console.log(data);
           // Update the global user context
           updateUserData(data);
         }
