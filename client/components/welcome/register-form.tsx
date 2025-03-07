@@ -1,5 +1,3 @@
-"use client";
-
 import type React from "react";
 
 import { useState } from "react";
@@ -10,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import router from "next/router";
+import { useRouter } from "next/navigation";
 
 // Define validation schema with Zod
 const registerSchema = z
@@ -66,6 +64,8 @@ type FormErrors = {
 };
 
 export function RegisterForm() {
+  const router = useRouter();
+
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [formData, setFormData] = useState({
