@@ -18,7 +18,7 @@ def populate():
     Populate the database with sample data for testing.
     """
     # Create Teachers
-    with open("sample_files/1.jpg", "rb") as f:
+    with open("1.jpg", "rb") as f:
         teacher1 = User.objects.create_user(
             username="teacher1",
             email="teacher1@elearning.org",
@@ -30,7 +30,7 @@ def populate():
             status="Teaching Advanced Web Development",
         )
 
-    with open("sample_files/2.jpg", "rb") as f:
+    with open("2.jpg", "rb") as f:
         teacher2 = User.objects.create_user(
             username="teacher2",
             email="teacher2@elearning.org",
@@ -43,7 +43,7 @@ def populate():
         )
 
     # Create Students
-    with open("sample_files/3.jpg", "rb") as f:
+    with open("3.jpg", "rb") as f:
         student1 = User.objects.create_user(
             username="student1",
             email="student1@elearning.org",
@@ -55,7 +55,7 @@ def populate():
             status="Learning Python",
         )
 
-    with open("sample_files/4.jpg", "rb") as f:
+    with open("4.jpg", "rb") as f:
         student2 = User.objects.create_user(
             username="student2",
             email="student2@elearning.org",
@@ -67,7 +67,7 @@ def populate():
             status="Learning AdvancedWeb Development",
         )
 
-    with open("sample_files/5.jpg", "rb") as f:
+    with open("5.jpg", "rb") as f:
         student3 = User.objects.create_user(
             username="student3",
             email="student3@elearning.org",
@@ -79,7 +79,7 @@ def populate():
             status="Learning Mobile Development",
         )
 
-    with open("sample_files/6.jpg", "rb") as f:
+    with open("6.jpg", "rb") as f:
         student4 = User.objects.create_user(
             username="student4",
             email="student4@elearning.org",
@@ -91,7 +91,7 @@ def populate():
             status="Today is a good day",
         )
 
-    with open("sample_files/7.jpg", "rb") as f:
+    with open("7.jpg", "rb") as f:
         student5 = User.objects.create_user(
             username="student5",
             email="student5@elearning.org",
@@ -127,7 +127,7 @@ def populate():
     Enrollment.objects.create(student=student5, course=course2)
 
     # Add Course Materials
-    with open("sample_files/awd-syllabus.pdf", "rb") as f:
+    with open("awd-syllabus.pdf", "rb") as f:
         material1 = CourseMaterial.objects.create(
             course=course1,
             title="AWD Syllabus",
@@ -135,7 +135,7 @@ def populate():
             is_active=True,
         )
 
-    with open("sample_files/AWD-CW2-v2.pdf", "rb") as f:
+    with open("AWD-CW2-v2.pdf", "rb") as f:
         material2 = CourseMaterial.objects.create(
             course=course1,
             title="AWD Final Requirements",
@@ -143,7 +143,7 @@ def populate():
             is_active=True,
         )
 
-    with open("sample_files/md-syllabus.pdf", "rb") as f:
+    with open("md-syllabus.pdf", "rb") as f:
         material3 = CourseMaterial.objects.create(
             course=course2,
             title="MD Syllabus",
@@ -188,7 +188,7 @@ def populate():
     )
 
     # Attach Files to Chat Messages
-    with open("sample_files/awd-syllabus.pdf", "rb") as f:
+    with open("awd-syllabus.pdf", "rb") as f:
         FileUpload.objects.create(chat_message=message1, file=File(f))
 
     # Add Notifications
