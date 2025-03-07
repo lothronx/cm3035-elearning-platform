@@ -6,8 +6,8 @@ from rest_framework_nested import routers
 from accounts.views import (
     UserRegistrationView,
     UserLogoutView,
-    UserDashboardView,
-    UserProfileView,
+    DashboardViewSet,
+    UserViewSet,
 )
 
 # Import ViewSets from each app
@@ -18,8 +18,8 @@ from accounts.views import (
 router = DefaultRouter()
 
 # User-related routes
-router.register(r"dashboard", UserDashboardView, basename="user-dashboard")
-router.register(r"members", UserProfileView, basename="user-profile")
+router.register(r"dashboard", DashboardViewSet, basename="user-dashboard")
+router.register(r"members", UserViewSet, basename="user-profile")
 
 
 # Course-related routes

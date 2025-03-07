@@ -1,3 +1,4 @@
+# pylint: disable=E1101
 from rest_framework import permissions
 from courses.models import Course, Enrollment
 

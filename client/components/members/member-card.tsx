@@ -6,11 +6,11 @@ import { Badge } from "@/components/ui/badge";
 
 interface Member {
   id: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   username: string;
   status: string;
-  imageUrl: string;
+  photo: string;
   role: string;
 }
 
@@ -24,13 +24,13 @@ export function MemberCard({ member }: MemberCardProps) {
       <Card className="h-full transition-all duration-300 bg-background-light hover:shadow-md justify-between">
         <CardContent className="flex-grow flex flex-col items-center text-center">
           <img
-            src={member.imageUrl || "/blank.png"}
-            alt={`${member.firstName} ${member.lastName}`}
+            src={member.photo || "/blank.png"}
+            alt={`${member.first_name} ${member.last_name}`}
             className="w-24 h-24 rounded-full object-cover m-4"
           />
           <Badge variant={member.role === "teacher" ? "default" : "secondary"}>{member.role}</Badge>
           <h3 className="text-xl font-semibold text-secondary pt-2">
-            {member.firstName} {member.lastName}
+            {member.first_name} {member.last_name}
           </h3>
           <div className="flex gap-2 mb-4">
             <p className="text-muted-foreground">@{member.username}</p>

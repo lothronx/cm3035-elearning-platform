@@ -3,10 +3,10 @@ from rest_framework import viewsets, generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
-from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
 
+from api.permissions import IsTeacher
 from accounts.models import User
 from accounts.serializers import UserSerializer
 from courses.models import Enrollment, Course
@@ -84,7 +84,7 @@ class UserLogoutView(generics.GenericAPIView):
             )
 
 
-class UserDashboardView(viewsets.ViewSet):
+class DashboardViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
     def list(self, request):
@@ -186,29 +186,47 @@ class UserDashboardView(viewsets.ViewSet):
             )
 
 
-class UserProfileView(viewsets.ViewSet):
+class UserViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        """
+        Instantiate and return the list of permissions that this view requires.
+        - For list action (GET /members/), only teachers can access
+        - For retrieve action (GET /members/[id]), any authenticated user can access
+        """
+        if self.action == "list":
+            permission_classes = [IsAuthenticated, IsTeacher]
+        else:
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
 
     def list(self, request):
-        queryset = User.objects.all()
-        serializer = UserSerializer(queryset, many=True)
-        return Response(
-            [
+        """
+        List all users - only accessible to teachers
+        Returns photos, role, first_name, last_name, username, status
+        """
+        users = User.objects.all()
+        user_data = []
+
+        for user in users:
+            user_data.append(
                 {
+                    "id": user.id,
+                    "username": user.username,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "role": user.role,
+                    "status": user.status,
                     "photo": (
-                        request.build_absolute_uri(user["photo"].url)
-                        if user["photo"]
+                        request.build_absolute_uri(user.photo.url)
+                        if user.photo
                         else None
                     ),
-                    "role": user["role"],
-                    "first_name": user["first_name"],
-                    "last_name": user["last_name"],
-                    "username": user["username"],
-                    "status": user["status"],
                 }
-                for user in serializer.data
-            ],
-            status=status.HTTP_200_OK,
-        )
+            )
+
+        return Response(user_data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, pk=None):
         try:
