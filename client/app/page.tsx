@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Toaster } from "sonner";
-import { LoginForm } from "@/components/login-form";
-import { RegisterForm } from "@/components/register-form";
+import { LoginForm } from "@/components/welcome/login-form";
+import { RegisterForm } from "@/components/welcome/register-form";
 import { checkAuthStatus } from "@/lib/auth";
 
 export default function WelcomePage() {

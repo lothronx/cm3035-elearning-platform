@@ -1,17 +1,16 @@
 # pylint: disable=E1101
-from rest_framework import viewsets
+from rest_framework import viewsets, generics, status
 from rest_framework.permissions import IsAuthenticated
-from accounts.models import User
-from accounts.serializers import UserSerializer
-from courses.serializers import CourseSerializer, EnrollmentSerializer
-from rest_framework import generics
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework.exceptions import ValidationError
-from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
-from courses.models import Enrollment
 from rest_framework.decorators import action
+
+from accounts.models import User
+from accounts.serializers import UserSerializer
+from courses.models import Enrollment, Course
+from courses.serializers import CourseSerializer, EnrollmentSerializer
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -66,12 +65,25 @@ class UserDashboardView(viewsets.ViewSet):
 
     def list(self, request):
         user = request.user
-        queryset = Enrollment.objects.filter(student=user)
-        enrollments = EnrollmentSerializer(queryset, many=True).data
-        courses = [
-            {"id": enrollment["course_id"], "name": enrollment["course"]}
-            for enrollment in enrollments
-        ]
+        courses = []
+
+        if user.role == "teacher":
+            # For teachers, get courses they teach
+            queryset = Course.objects.filter(teacher=user)
+            courses_taught = CourseSerializer(queryset, many=True).data
+            courses = [
+                {"id": course["id"], "name": course["title"]}
+                for course in courses_taught
+            ]
+        else:
+            # For students, get enrolled courses
+            queryset = Enrollment.objects.filter(student=user)
+            enrollments = EnrollmentSerializer(queryset, many=True).data
+            courses = [
+                {"id": enrollment["course_id"], "name": enrollment["course"]}
+                for enrollment in enrollments
+            ]
+
         return Response(
             {
                 "first_name": user.first_name,
@@ -86,7 +98,7 @@ class UserDashboardView(viewsets.ViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @action(detail=False, methods=['patch'], url_path='patch-status')
+    @action(detail=False, methods=["patch"], url_path="patch-status")
     def patch_status(self, request):
         user = request.user
         user.status = request.data.get("status", user.status)
@@ -98,7 +110,7 @@ class UserDashboardView(viewsets.ViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @action(detail=False, methods=['patch'], url_path='patch-photo')
+    @action(detail=False, methods=["patch"], url_path="patch-photo")
     def patch_photo(self, request):
         user = request.user
         if "photo" in request.FILES:
@@ -108,3 +120,50 @@ class UserDashboardView(viewsets.ViewSet):
             {"photo": request.build_absolute_uri(user.photo.url)},
             status=status.HTTP_200_OK,
         )
+
+
+class UserProfileView(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def retrieve(self, request, pk=None):
+        try:
+            user = User.objects.get(pk=pk)
+            courses = []
+
+            if user.role == "teacher":
+                # For teachers, get courses they teach
+                queryset = Course.objects.filter(teacher=user)
+                courses_taught = CourseSerializer(queryset, many=True).data
+                courses = [
+                    {"id": course["id"], "name": course["title"]}
+                    for course in courses_taught
+                ]
+            else:
+                # For students, get enrolled courses
+                queryset = Enrollment.objects.filter(student=user)
+                enrollments = EnrollmentSerializer(queryset, many=True).data
+                courses = [
+                    {"id": enrollment["course_id"], "name": enrollment["course"]}
+                    for enrollment in enrollments
+                ]
+
+            return Response(
+                {
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "role": user.role,
+                    "photo": (
+                        request.build_absolute_uri(user.photo.url)
+                        if user.photo
+                        else None
+                    ),
+                    "status": user.status,
+                    "courses": courses,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )

@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { handleUnauthorized } from "@/lib/auth";
+import { useUser } from "@/contexts/user-context";
 
 // Mock notifications - in a real app, these would come from an API
 const mockNotifications = [
@@ -24,11 +25,12 @@ const mockNotifications = [
   { id: 3, message: "New course recommendation", read: true, time: "Yesterday" },
 ];
 
-export function DashboardNavbar() {
+export function Navbar() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [notifications, setNotifications] = useState(mockNotifications);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { userRole } = useUser();
 
   // Add scroll effect to navbar
   useEffect(() => {
@@ -76,18 +78,30 @@ export function DashboardNavbar() {
       }`}>
       <div className="container mx-auto flex h-16 items-center justify-between w-full px-4">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-2xl font-bold text-secondary">
-            E-Learning
-          </Link>
+          <h1 className="text-2xl font-bold text-secondary">E-Learning</h1>
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <Button
               variant="ghost"
               asChild
-              className="text-primary-foreground hover:text-primary dark:text-slate-300">
-              <Link href="/courses">Browse Courses</Link>
+              className="text-primary-foreground hover:text-primary dark:text-slate-300 text-md">
+              <Link href="/dashboard">Home</Link>
             </Button>
+            <Button
+              variant="ghost"
+              asChild
+              className="text-primary-foreground hover:text-primary dark:text-slate-300 text-md">
+              <Link href="/courses">Explore Courses</Link>
+            </Button>
+            {userRole === "teacher" && (
+              <Button
+                variant="ghost"
+                asChild
+                className="text-primary-foreground hover:text-primary dark:text-slate-300 text-md">
+                <Link href="/members">Members Directory</Link>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -97,7 +111,7 @@ export function DashboardNavbar() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
             <Input
               type="search"
-              placeholder="Search courses..."
+              placeholder="Search..."
               className="w-full max-w-[200px] bg-background-light border-slate-200 pl-8 text-sm transition-all focus:max-w-xs dark:border-slate-700 lg:max-w-xs"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

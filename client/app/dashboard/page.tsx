@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { Toaster } from "sonner";
-import { DashboardNavbar } from "@/components/dashboard/navbar";
+import { Navbar } from "@/components/navbar";
 import { PersonalDetails } from "@/components/dashboard/personal-details";
-import { EnrolledCourses } from "@/components/dashboard/enrolled-courses";
-import { ChatBox } from "@/components/dashboard/chat-box";
+import { MyCourses } from "@/components/dashboard/my-courses";
+import { ChatBox } from "@/components/chat-box";
 import { useRouter } from "next/navigation";
 import { handleUnauthorized, fetchWithAuth, checkAuthStatus } from "@/lib/auth";
+import { useUser } from "@/contexts/user-context";
 
-export default function StudentDashboard() {
+export default function Dashboard() {
   const router = useRouter();
+  const { updateUserData } = useUser();
 
   const [userData, setUserData] = useState({
     firstName: "",
@@ -40,6 +42,9 @@ export default function StudentDashboard() {
             status: data.status,
             courses: data.courses,
           });
+
+          // Update the global user context
+          updateUserData(data);
         }
       } catch (error) {
         console.error(error);
@@ -85,31 +90,32 @@ export default function StudentDashboard() {
       }
 
       const formData = new FormData();
-      formData.append('photo', file);
+      formData.append("photo", file);
 
       const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/patch-photo/`,
         {
-          method: 'PATCH',
-          body: formData,        }
+          method: "PATCH",
+          body: formData,
+        }
       );
 
       if (!response.ok) {
-        throw new Error('Failed to upload image');
+        throw new Error("Failed to upload image");
       }
 
       const data = await response.json();
       setUserData((prev) => ({ ...prev, photo: data.photo }));
     } catch (error) {
-      console.error('Error uploading photo:', error);
-      throw error; 
+      console.error("Error uploading photo:", error);
+      throw error;
     }
   };
 
   return (
     <div className="min-h-screen bg-background dark:bg-slate-950">
       <Toaster position="top-right" />
-      <DashboardNavbar />
+      <Navbar />
 
       <main className="container mx-auto px-4 py-8 pt-24">
         <div className="flex flex-col gap-8">
@@ -122,9 +128,9 @@ export default function StudentDashboard() {
             />
           </div>
 
-          {/* Enrolled Courses Section */}
+          {/* My Courses Section */}
           <div className="transition-all duration-300 hover:shadow-md">
-            <EnrolledCourses courses={userData.courses} />
+            <MyCourses courses={userData.courses} />
           </div>
         </div>
       </main>
