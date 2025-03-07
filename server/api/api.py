@@ -42,6 +42,6 @@ router.register(r"members", UserProfileView, basename="user-profile")
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("register/", UserRegistrationView.as_view(), name="register"),
-    path("logout/", UserLogoutView.as_view(), name="logout"),
+    path("auth/register/", UserRegistrationView.as_view(), name="register"),
+    path("auth/logout/", UserLogoutView.as_view(), name="logout"),
 ]
