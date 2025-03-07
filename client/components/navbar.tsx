@@ -93,14 +93,14 @@ export function Navbar() {
               variant="ghost"
               asChild
               className="text-primary-foreground hover:text-primary dark:text-slate-300 text-md">
-              <Link href="/courses">Explore Courses</Link>
+              <Link href="/courses">Explore</Link>
             </Button>
             {userRole === "teacher" && (
               <Button
                 variant="ghost"
                 asChild
                 className="text-primary-foreground hover:text-primary dark:text-slate-300 text-md">
-                <Link href="/members">Members Directory</Link>
+                <Link href="/members">Members</Link>
               </Button>
             )}
           </div>
