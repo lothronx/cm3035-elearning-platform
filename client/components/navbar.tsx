@@ -74,7 +74,7 @@ export function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 z-10 w-full border-b bg-primary backdrop-blur-md transition-all duration-300 dark:bg-slate-950/80 ${
+      className={`fixed top-0 z-10 w-full border-b bg-primary backdrop-blur-md transition-all duration-300  ${
         isScrolled ? "shadow-sm" : ""
       }`}>
       <div className="container mx-auto flex h-16 items-center justify-between w-full px-4">

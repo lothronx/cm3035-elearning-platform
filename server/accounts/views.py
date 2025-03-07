@@ -104,7 +104,11 @@ class DashboardViewSet(viewsets.ViewSet):
             queryset = Enrollment.objects.filter(student=user)
             enrollments = EnrollmentSerializer(queryset, many=True).data
             courses = [
-                {"id": enrollment["course_id"], "name": enrollment["course"]}
+                {
+                    "id": enrollment["course_id"],
+                    "name": enrollment["course"],
+                    "is_active": enrollment["is_completed"],
+                }
                 for enrollment in enrollments
             ]
 
@@ -240,7 +244,11 @@ class UserViewSet(viewsets.ViewSet):
                 queryset = Course.objects.filter(teacher=user)
                 courses_taught = CourseSerializer(queryset, many=True).data
                 courses = [
-                    {"id": course["id"], "name": course["title"]}
+                    {
+                        "id": course["id"],
+                        "name": course["title"],
+                        "is_active": course["is_active"],
+                    }
                     for course in courses_taught
                 ]
             else:
@@ -248,7 +256,11 @@ class UserViewSet(viewsets.ViewSet):
                 queryset = Enrollment.objects.filter(student=user)
                 enrollments = EnrollmentSerializer(queryset, many=True).data
                 courses = [
-                    {"id": enrollment["course_id"], "name": enrollment["course"]}
+                    {
+                        "id": enrollment["course_id"],
+                        "name": enrollment["course"],
+                        "is_active": not enrollment["is_completed"],
+                    }
                     for enrollment in enrollments
                 ]
 

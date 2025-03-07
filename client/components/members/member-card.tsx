@@ -21,7 +21,7 @@ interface MemberCardProps {
 export function MemberCard({ member }: MemberCardProps) {
   return (
     <Link href={`/members/${member.id}`} className="block ">
-      <Card className="h-full transition-all duration-300 bg-background-light hover:shadow-md justify-between">
+      <Card className="h-full transition-all duration-300 bg-background-light hover:shadow-md hover:bg-primary/10 justify-between">
         <CardContent className="flex-grow flex flex-col items-center text-center">
           <img
             src={member.photo || "/blank.png"}

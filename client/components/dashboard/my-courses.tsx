@@ -40,7 +40,7 @@ export function MyCourses({ courses }: MyCoursesProps) {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
             {courses.map((course) => (
               <Link key={course.id} href={`/courses/${course.id}`} className="group block">
-                <div className="rounded-xl border border-slate-200 bg-background p-4 shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-primary/30">
+                <div className="rounded-xl border-dashed border-2 border-background bg-background-light p-4 shadow-sm transition-all duration-300 hover:bg-primary/10 hover:shadow-md ">
                   <div className="mb-3 flex items-center">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
                       <BookOpen className="h-4 w-4" />

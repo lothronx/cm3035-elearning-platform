@@ -4,6 +4,7 @@ import { Toaster, toast } from "sonner";
 import { Navbar } from "@/components/navbar";
 import { CourseCard } from "@/components/courses/course-card";
 import { useState } from "react";
+import { ChatBox } from "@/components/chat-box";
 
 // Sample course data
 const initialCourses = [
@@ -71,7 +72,7 @@ const initialCourses = [
   },
 ];
 
-export default function CourseList() {
+export default function CoursesPage() {
   const [courses, setCourses] = useState(initialCourses);
 
   // Function to handle course enrollment
@@ -91,7 +92,7 @@ export default function CourseList() {
       <Toaster position="top-right" />
       <Navbar />
       <div className="container mx-auto px-4 py-8 pt-24">
-        <h1 className="text-2xl font-bold mb-8 text-secondary">Available Courses</h1>
+        <h1 className="text-2xl font-bold mb-8 text-secondary">All Courses</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.map((course) => (
             <CourseCard
@@ -103,6 +104,8 @@ export default function CourseList() {
           ))}
         </div>
       </div>
+      {/* Chat Box */}
+      <ChatBox />
     </div>
   );
 }

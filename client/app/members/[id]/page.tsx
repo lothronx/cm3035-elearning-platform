@@ -7,8 +7,9 @@ import { MemberDetails } from "@/components/members/member-details";
 import { MemberCourses } from "@/components/members/member-courses";
 import { handleUnauthorized, fetchWithAuth, checkAuthStatus } from "@/lib/auth";
 import { useRouter } from "next/navigation";
+import { ChatBox } from "@/components/chat-box";
 
-export default function MemberProfile() {
+export default function MemberDetailPage() {
   const router = useRouter();
   const params = useParams();
   const memberId = params.id;
@@ -68,6 +69,8 @@ export default function MemberProfile() {
           </div>
         </div>
       </main>
+      {/* Chat Box */}
+      <ChatBox />
     </div>
   );
 }

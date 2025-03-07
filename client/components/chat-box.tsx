@@ -86,7 +86,7 @@ export function ChatBox() {
       {/* Chat Button */}
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-4 h-12 w-12 rounded-full shadow-lg transition-transform duration-300 hover:scale-105"
+        className="fixed bottom-5 right-5 h-12 w-12 rounded-full shadow-lg transition-transform duration-300 hover:scale-105 shadow-sm shadow-secondary"
         size="icon"
         aria-label="Open chat"
         style={{ display: isOpen ? "none" : "flex" }}

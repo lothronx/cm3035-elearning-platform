@@ -66,7 +66,7 @@ export function MemberDetails({ userData }: MemberDetailsProps) {
                   )
                 }
                 variant="outline"
-                className="bg-secondary text-primary-foreground hover:bg-secondary/90">
+                className="bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground">
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Chat with me
               </Button>

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { checkAuthStatus, fetchWithAuth, handleUnauthorized } from "@/lib/auth";
 import { AccessDenied } from "@/components/access-denied";
+import { ChatBox } from "@/components/chat-box";
 
 // Define the Member interface to match the API response
 interface Member {
@@ -99,6 +100,8 @@ export default function MembersPage() {
           </div>
         )}
       </div>
+      {/* Chat Box */}
+      <ChatBox />
     </div>
   );
 }

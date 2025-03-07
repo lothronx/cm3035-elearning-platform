@@ -1,0 +1,45 @@
+"use client"
+
+import { useState } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import CourseMaterials from "@/components/courses/course-materials"
+import EnrolledStudents from "@/components/courses/enrolled-students"
+import CourseFeedback from "@/components/courses/course-feedback"
+import { FileText, Users, MessageSquare } from "lucide-react"
+
+interface CourseTabsProps {
+  courseId: string
+}
+
+export default function CourseTabs({ courseId }: CourseTabsProps) {
+  const [activeTab, setActiveTab] = useState("materials")
+
+  return (
+    <Tabs defaultValue="materials" value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <TabsList className="grid grid-cols-3 mb-2 w-full bg-background-light ">
+        <TabsTrigger value="materials" className="flex items-center gap-2">
+          <FileText className="h-4 w-4" />
+          <span className="hidden sm:inline">Materials</span>
+        </TabsTrigger>
+        <TabsTrigger value="students" className="flex items-center gap-2">
+          <Users className="h-4 w-4" />
+          <span className="hidden sm:inline">Students</span>
+        </TabsTrigger>
+        <TabsTrigger value="feedback" className="flex items-center gap-2">
+          <MessageSquare className="h-4 w-4" />
+          <span className="hidden sm:inline">Feedback</span>
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="materials" className="mt-0">
+        <CourseMaterials courseId={courseId} />
+      </TabsContent>
+      <TabsContent value="students" className="mt-0">
+        <EnrolledStudents courseId={courseId} />
+      </TabsContent>
+      <TabsContent value="feedback" className="mt-0">
+        <CourseFeedback courseId={courseId} />
+      </TabsContent>
+    </Tabs>
+  )
+}
+
