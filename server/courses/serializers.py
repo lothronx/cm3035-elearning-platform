@@ -33,6 +33,7 @@ class CourseMaterialSerializer(serializers.ModelSerializer):
 class EnrollmentSerializer(serializers.ModelSerializer):
     student = serializers.StringRelatedField()  # Display student's username
     course = serializers.StringRelatedField()  # Display course title
+    course_id = serializers.PrimaryKeyRelatedField(source='course', read_only=True)
 
     class Meta:
         model = Enrollment
@@ -40,6 +41,7 @@ class EnrollmentSerializer(serializers.ModelSerializer):
             "id",
             "student",
             "course",
+            "course_id",
             "enrolled_at",
             "is_completed",
             "completed_at",

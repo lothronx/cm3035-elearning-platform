@@ -71,7 +71,7 @@ def populate():
         student3 = User.objects.create_user(
             username="student3",
             email="student3@elearning.org",
-            password="insta",
+            password="elearning",
             role="student",
             first_name="Charlie",
             last_name="Brown",

@@ -1,77 +1,85 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useRef, useEffect } from "react"
-import Image from "next/image"
-import { Camera, Pencil, Check, X } from "lucide-react"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Camera, Pencil, Check, X } from "lucide-react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface PersonalDetailsProps {
   userData: {
-    firstName: string
-    lastName: string
-    profilePicture: string
-    status: string
-  }
-  onStatusUpdate: (newStatus: string) => void
-  onProfilePictureUpdate: (newPictureUrl: string) => void
+    firstName: string;
+    lastName: string;
+    role: string;
+    photo: string;
+    status: string;
+  };
+  onStatusUpdate: (newStatus: string) => void;
+  onPhotoUpdate: (newPictureUrl: string) => void;
 }
 
-export function PersonalDetails({ userData, onStatusUpdate, onProfilePictureUpdate }: PersonalDetailsProps) {
-  const [isEditingStatus, setIsEditingStatus] = useState(false)
-  const [statusText, setStatusText] = useState(userData.status)
-  const [isUploadingImage, setIsUploadingImage] = useState(false)
-  const statusInputRef = useRef<HTMLInputElement>(null)
+export function PersonalDetails({ userData, onStatusUpdate, onPhotoUpdate }: PersonalDetailsProps) {
+  const [isEditingStatus, setIsEditingStatus] = useState(false);
+  const [statusText, setStatusText] = useState(userData.status);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const statusInputRef = useRef<HTMLInputElement>(null);
 
   // Focus the input when editing starts
   useEffect(() => {
     if (isEditingStatus && statusInputRef.current) {
-      statusInputRef.current.focus()
+      statusInputRef.current.focus();
     }
-  }, [isEditingStatus])
+  }, [isEditingStatus]);
 
   const handleStatusSave = () => {
-    onStatusUpdate(statusText)
-    setIsEditingStatus(false)
-    toast.success("Status updated successfully")
-  }
+    onStatusUpdate(statusText);
+    setIsEditingStatus(false);
+    toast.success("Status updated successfully");
+  };
 
   const handleStatusCancel = () => {
-    setStatusText(userData.status)
-    setIsEditingStatus(false)
-  }
+    setStatusText(userData.status);
+    setIsEditingStatus(false);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      handleStatusSave()
+      handleStatusSave();
     } else if (e.key === "Escape") {
-      handleStatusCancel()
+      handleStatusCancel();
     }
-  }
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     // In a real app, you would upload the file to a server
     // and get back a URL to the uploaded image
-    setIsUploadingImage(true)
+    setIsUploadingImage(true);
 
     // Simulate upload delay
     setTimeout(() => {
       // For demo purposes, we're just using a placeholder
       // In a real app, this would be the URL returned from your API
-      onProfilePictureUpdate(`/placeholder.svg?height=200&width=200&text=${file.name}`)
-      setIsUploadingImage(false)
-      toast.success("Profile picture updated")
-    }, 1500)
-  }
+      onPhotoUpdate(`/placeholder.svg?height=200&width=200&text=${file.name}`);
+      setIsUploadingImage(false);
+      toast.success("Profile picture updated");
+    }, 1500);
+  };
 
   return (
     <Card className="overflow-hidden border-none bg-white shadow-sm transition-all duration-300 dark:bg-slate-900">
@@ -81,7 +89,7 @@ export function PersonalDetails({ userData, onStatusUpdate, onProfilePictureUpda
           <div className="relative shrink-0">
             <div className="h-24 w-24 overflow-hidden rounded-full bg-slate-100 ring-4 ring-white/50 transition-all duration-300 hover:ring-primary/20 dark:bg-slate-800 dark:ring-slate-800/50 sm:h-28 sm:w-28">
               <Image
-                src={userData.profilePicture || "/placeholder.svg"}
+                src={userData.photo || "/global.svg"}
                 alt="Profile"
                 width={112}
                 height={112}
@@ -93,8 +101,7 @@ export function PersonalDetails({ userData, onStatusUpdate, onProfilePictureUpda
                 <Button
                   size="icon"
                   variant="secondary"
-                  className="absolute bottom-0 right-0 h-8 w-8 rounded-full shadow-md transition-transform duration-200 hover:scale-110 bg-primary"
-                >
+                  className="absolute bottom-0 right-0 h-8 w-8 rounded-full shadow-md transition-transform duration-200 hover:scale-110 bg-secondary">
                   <Camera className="h-4 w-4 text-primary-foreground" />
                 </Button>
               </DialogTrigger>
@@ -106,7 +113,7 @@ export function PersonalDetails({ userData, onStatusUpdate, onProfilePictureUpda
                   <div className="flex justify-center">
                     <div className="overflow-hidden rounded-full">
                       <Image
-                        src={userData.profilePicture || "/placeholder.svg"}
+                        src={userData.photo || "/placeholder.svg"}
                         alt="Current Profile"
                         width={150}
                         height={150}
@@ -124,7 +131,9 @@ export function PersonalDetails({ userData, onStatusUpdate, onProfilePictureUpda
                       disabled={isUploadingImage}
                     />
                   </div>
-                  {isUploadingImage && <div className="text-center text-sm text-muted-foreground">Uploading...</div>}
+                  {isUploadingImage && (
+                    <div className="text-center text-sm text-muted-foreground">Uploading...</div>
+                  )}
                 </div>
               </DialogContent>
             </Dialog>
@@ -133,11 +142,11 @@ export function PersonalDetails({ userData, onStatusUpdate, onProfilePictureUpda
           {/* Name and Status - Right Side */}
           <div className="flex flex-1 flex-col gap-3 text-center sm:text-left">
             <div className="flex flex-col items-center sm:flex-row sm:items-center sm:gap-2">
-              <h3 className="text-2xl font-medium tracking-tight text-primary">
+              <h3 className="text-2xl font-medium tracking-tight text-secondary">
                 {userData.firstName} {userData.lastName}
               </h3>
-              <span className="mt-1 rounded-full bg-primary px-2.5 py-0.5 text-xs font-medium text-primary-foreground sm:mt-0">
-                Student
+              <span className="mt-1 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-primary-foreground sm:mt-0">
+                {userData.role}
               </span>
             </div>
 
@@ -157,16 +166,14 @@ export function PersonalDetails({ userData, onStatusUpdate, onProfilePictureUpda
                     <Button
                       size="icon"
                       onClick={handleStatusSave}
-                      className="h-9 w-9 transition-all duration-200 hover:bg-green-500 hover:text-white"
-                    >
+                      className="h-9 w-9 transition-all duration-200 hover:bg-green-500 hover:text-white">
                       <Check className="h-4 w-4" />
                     </Button>
                     <Button
                       size="icon"
                       variant="outline"
                       onClick={handleStatusCancel}
-                      className="h-9 w-9 transition-all duration-200 hover:bg-red-500 hover:text-white"
-                    >
+                      className="h-9 w-9 transition-all duration-200 hover:bg-red-500 hover:text-white">
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
@@ -178,8 +185,7 @@ export function PersonalDetails({ userData, onStatusUpdate, onProfilePictureUpda
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsEditingStatus(true)}
-                    className="h-7 px-2 text-slate-500 transition-colors duration-200 hover:text-primary dark:text-slate-400"
-                  >
+                    className="h-7 px-2 text-slate-500 transition-colors duration-200 hover:text-secondary dark:text-slate-400">
                     <Pencil className="mr-1 h-3 w-3" />
                     Edit
                   </Button>
@@ -190,6 +196,5 @@ export function PersonalDetails({ userData, onStatusUpdate, onProfilePictureUpda
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

@@ -1,44 +1,68 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Toaster } from "sonner"
-import { DashboardNavbar } from "@/components/dashboard/navbar"
-import { PersonalDetails } from "@/components/dashboard/personal-details"
-import { EnrolledCourses } from "@/components/dashboard/enrolled-courses"
-import { ChatBox } from "@/components/dashboard/chat-box"
-
-// Mock user data - in a real app, this would come from an API
-const mockUserData = {
-  firstName: "John",
-  lastName: "Doe",
-  profilePicture: "/placeholder.svg?height=200&width=200",
-  status: "Learning new things every day!",
-  enrolledCourses: [
-    { id: 1, name: "Introduction to React" },
-    { id: 2, name: "Advanced JavaScript" },
-    { id: 3, name: "Web Design Fundamentals" },
-    { id: 4, name: "Data Structures and Algorithms" },
-  ],
-}
+import { useState, useEffect } from "react";
+import { Toaster } from "sonner";
+import { DashboardNavbar } from "@/components/dashboard/navbar";
+import { PersonalDetails } from "@/components/dashboard/personal-details";
+import { EnrolledCourses } from "@/components/dashboard/enrolled-courses";
+import { ChatBox } from "@/components/dashboard/chat-box";
 
 export default function StudentDashboard() {
-  const [userData, setUserData] = useState(mockUserData)
+  const [userData, setUserData] = useState({
+    firstName: "",
+    lastName: "",
+    role: "",
+    photo: "",
+    status: "",
+    courses: [],
+  });
 
-  // In a real app, fetch user data from API
   useEffect(() => {
-    // Fetch user data
-    // Example: const data = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/profile`)
-  }, [])
+    const fetchUserData = async () => {
+      const accessToken = localStorage.getItem("accessToken");
+      if (!accessToken) return;
+
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        setUserData({
+          firstName: data.first_name,
+          lastName: data.last_name,
+          role: data.role,
+          photo: data.photo,
+          status: data.status,
+          courses: data.courses,
+        });
+        console.log(data.courses);
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const updateStatus = (newStatus: string) => {
-    setUserData((prev) => ({ ...prev, status: newStatus }))
+    setUserData((prev) => ({ ...prev, status: newStatus }));
     // In a real app, you would also update this on the server
-  }
+  };
 
-  const updateProfilePicture = (newPictureUrl: string) => {
-    setUserData((prev) => ({ ...prev, profilePicture: newPictureUrl }))
+  const updatePhoto = (newPictureUrl: string) => {
+    setUserData((prev) => ({ ...prev, photo: newPictureUrl }));
     // In a real app, you would also update this on the server
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background dark:bg-slate-950">
@@ -52,13 +76,13 @@ export default function StudentDashboard() {
             <PersonalDetails
               userData={userData}
               onStatusUpdate={updateStatus}
-              onProfilePictureUpdate={updateProfilePicture}
+              onPhotoUpdate={updatePhoto}
             />
           </div>
 
           {/* Enrolled Courses Section */}
           <div className="transition-all duration-300 hover:shadow-md">
-            <EnrolledCourses courses={userData.enrolledCourses} />
+            <EnrolledCourses courses={userData.courses} />
           </div>
         </div>
       </main>
@@ -66,6 +90,5 @@ export default function StudentDashboard() {
       {/* Chat Box */}
       <ChatBox />
     </div>
-  )
+  );
 }
-

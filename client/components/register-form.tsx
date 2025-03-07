@@ -1,15 +1,16 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { toast } from "sonner"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { useState } from "react";
+import { toast } from "sonner";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import router from "next/router";
 
 // Define validation schema with Zod
 const registerSchema = z
@@ -36,15 +37,15 @@ const registerSchema = z
       .refine(
         (password) => {
           // Check if password contains at least 2 of: letters, numbers, special characters
-          const hasLetter = /[a-zA-Z]/.test(password)
-          const hasNumber = /[0-9]/.test(password)
-          const hasSpecial = /[^a-zA-Z0-9]/.test(password)
+          const hasLetter = /[a-zA-Z]/.test(password);
+          const hasNumber = /[0-9]/.test(password);
+          const hasSpecial = /[^a-zA-Z0-9]/.test(password);
 
-          return [hasLetter, hasNumber, hasSpecial].filter(Boolean).length >= 2
+          return [hasLetter, hasNumber, hasSpecial].filter(Boolean).length >= 2;
         },
         {
           message: "Password must contain at least 2 of: letters, numbers, and special characters",
-        },
+        }
       ),
     confirmPassword: z.string(),
     role: z.enum(["student", "teacher"]),
@@ -52,21 +53,21 @@ const registerSchema = z
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
-  })
+  });
 
 type FormErrors = {
-  firstName?: string
-  lastName?: string
-  username?: string
-  password?: string
-  confirmPassword?: string
-  role?: string
-  server?: string
-}
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  password?: string;
+  confirmPassword?: string;
+  role?: string;
+  server?: string;
+};
 
 export function RegisterForm() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [errors, setErrors] = useState<FormErrors>({})
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -74,51 +75,51 @@ export function RegisterForm() {
     password: "",
     confirmPassword: "",
     role: "student",
-  })
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
     // Clear error for this field when user starts typing
     if (errors[name as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }))
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
-  }
+  };
 
   const handleRadioChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, role: value }))
-  }
+    setFormData((prev) => ({ ...prev, role: value }));
+  };
 
   const validateForm = () => {
     try {
-      registerSchema.parse(formData)
-      return true
+      registerSchema.parse(formData);
+      return true;
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const newErrors: FormErrors = {}
+        const newErrors: FormErrors = {};
         error.errors.forEach((err) => {
-          const path = err.path[0] as keyof FormErrors
-          newErrors[path] = err.message
-        })
-        setErrors(newErrors)
+          const path = err.path[0] as keyof FormErrors;
+          newErrors[path] = err.message;
+        });
+        setErrors(newErrors);
       }
-      return false
+      return false;
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     // Clear previous errors
-    setErrors({})
+    setErrors({});
 
     // Validate form
     if (!validateForm()) {
-      return
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/register/`, {
@@ -133,9 +134,9 @@ export function RegisterForm() {
           password: formData.password,
           role: formData.role,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
         // Handle server errors
@@ -144,10 +145,8 @@ export function RegisterForm() {
         } else {
           setErrors({ server: data.message || "Registration failed. Please try again." });
         }
-        throw new Error(data.message || "Registration failed")
+        throw new Error(data.message || "Registration failed");
       }
-
-      toast.success("Registration successful!")
 
       // Reset form
       setFormData({
@@ -157,16 +156,20 @@ export function RegisterForm() {
         password: "",
         confirmPassword: "",
         role: "student",
-      })
+      });
+
+      localStorage.setItem("accessToken", data.access);
+      localStorage.setItem("refreshToken", data.refresh);
+      router.push("/dashboard");
     } catch (error) {
-      console.error(error)
+      console.error(error);
       if (!errors.server) {
-        toast.error("Failed to register. Please try again.")
+        toast.error("Failed to register. Please try again.");
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Card>
@@ -177,7 +180,9 @@ export function RegisterForm() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           {errors.server && (
-            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">{errors.server}</div>
+            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+              {errors.server}
+            </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
@@ -245,12 +250,17 @@ export function RegisterForm() {
               onChange={handleChange}
               className={errors.confirmPassword ? "border-destructive" : ""}
             />
-            {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword}</p>}
+            {errors.confirmPassword && (
+              <p className="text-xs text-destructive">{errors.confirmPassword}</p>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label>I am a</Label>
-            <RadioGroup value={formData.role} onValueChange={handleRadioChange} className="flex space-x-4">
+            <RadioGroup
+              value={formData.role}
+              onValueChange={handleRadioChange}
+              className="flex space-x-4">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="student" id="student" />
                 <Label htmlFor="student">Student</Label>
@@ -269,6 +279,5 @@ export function RegisterForm() {
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }
-

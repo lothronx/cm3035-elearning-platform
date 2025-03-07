@@ -41,10 +41,9 @@ export function LoginForm() {
       }
 
       const data = await response.json();
-      toast.success("Login successful!");
-
-      // Here you would typically store the user token and redirect
-      // router.push("/dashboard")
+      localStorage.setItem("accessToken", data.access);
+      localStorage.setItem("refreshToken", data.refresh);
+      router.push("/dashboard");
     } catch (error) {
       toast.error("Failed to login. Please check your credentials.");
       console.error(error);
