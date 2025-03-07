@@ -62,14 +62,26 @@ class UserLogoutView(generics.GenericAPIView):
 
     def post(self, request):
         try:
-            # Get the token from the request
-            token = request.data.get("token")
-            OutstandingToken.objects.filter(
-                token=token
-            ).delete()  # This will remove the token from the database
-            return Response(status=status.HTTP_205_RESET_CONTENT)
+            # Get the refresh token from the request
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return Response(
+                    {"detail": "Refresh token is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Blacklist the refresh token
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return Response(
+                {"detail": "Successfully logged out"}, status=status.HTTP_200_OK
+            )
         except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Invalid token or token has been blacklisted already"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 class UserDashboardView(viewsets.ViewSet):
@@ -135,8 +147,6 @@ class UserDashboardView(viewsets.ViewSet):
 
 
 class UserProfileView(viewsets.ViewSet):
-
-    
 
     def list(self, request):
         queryset = User.objects.all()

@@ -58,6 +58,7 @@ export function Navbar() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
         },
+        body: JSON.stringify({ refresh: localStorage.getItem("refreshToken") }),
       });
 
       handleUnauthorized(router);
