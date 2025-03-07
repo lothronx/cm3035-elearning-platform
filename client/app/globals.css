@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-background: #fffbf0;
+  --color-background: #E3E3DB;
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -32,9 +32,9 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: #0f95b0;
-  --color-primary-foreground: #fffbf0;
-  --color-primary: #053154;
+  --color-secondary: #4A4035;
+  --color-primary-foreground: #E3E3DB;
+  --color-primary: #759048;
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);

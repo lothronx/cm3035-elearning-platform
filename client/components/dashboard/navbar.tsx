@@ -63,9 +63,9 @@ export function DashboardNavbar() {
       className={`fixed top-0 z-10 w-full border-b bg-primary backdrop-blur-md transition-all duration-300 dark:bg-slate-950/80 ${
         isScrolled ? "shadow-sm" : ""
       }`}>
-      <div className="container flex h-16 items-center justify-between px-4">
+      <div className="container flex h-16 items-center justify-between px-16">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-2xl font-bold text-primary-foreground">
+          <Link href="/dashboard" className="text-2xl font-bold text-secondary">
             E-Learning
           </Link>
 
