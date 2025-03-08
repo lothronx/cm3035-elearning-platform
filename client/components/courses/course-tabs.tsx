@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import CourseMaterials from "@/components/courses/course-materials"
-import EnrolledStudents from "@/components/courses/enrolled-students"
-import CourseFeedback from "@/components/courses/course-feedback"
-import { FileText, Users, MessageSquare } from "lucide-react"
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CourseMaterials } from "@/components/courses/course-materials";
+import EnrolledStudents from "@/components/courses/enrolled-students";
+import CourseFeedback from "@/components/courses/course-feedback";
+import { FileText, Users, MessageSquare } from "lucide-react";
 
 interface CourseTabsProps {
   courseId: string;
@@ -13,7 +13,11 @@ interface CourseTabsProps {
   isEnrolledStudents: boolean;
 }
 
-export default function CourseTabs({ courseId, isCourseTeacher, isEnrolledStudents }: CourseTabsProps) {
+export default function CourseTabs({
+  courseId,
+  isCourseTeacher,
+  isEnrolledStudents,
+}: CourseTabsProps) {
   const [activeTab, setActiveTab] = useState("materials");
 
   return (
@@ -37,15 +41,22 @@ export default function CourseTabs({ courseId, isCourseTeacher, isEnrolledStuden
         </TabsTrigger>
       </TabsList>
       <TabsContent value="materials" className="mt-0">
-        <CourseMaterials courseId={courseId} />
+        <CourseMaterials courseId={courseId} isCourseTeacher={isCourseTeacher} />
       </TabsContent>
       <TabsContent value="students" className="mt-0">
-        <EnrolledStudents courseId={courseId} />
+        <EnrolledStudents
+          courseId={courseId}
+          isCourseTeacher={isCourseTeacher}
+          isEnrolledStudents={isEnrolledStudents}
+        />
       </TabsContent>
       <TabsContent value="feedback" className="mt-0">
-        <CourseFeedback courseId={courseId} />
+        <CourseFeedback
+          courseId={courseId}
+          isCourseTeacher={isCourseTeacher}
+          isEnrolledStudents={isEnrolledStudents}
+        />
       </TabsContent>
     </Tabs>
   );
 }
-

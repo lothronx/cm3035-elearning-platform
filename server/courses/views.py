@@ -4,9 +4,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
-from django.shortcuts import get_object_or_404
 
-from courses.models import Course, Enrollment, CourseMaterial
+from courses.models import Course, CourseMaterial
 from courses.serializers import (
     CourseSerializer,
     CourseListSerializer,
@@ -41,7 +40,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         # Base queryset excluding admin users
         base_queryset = Course.objects.exclude(
             Q(teacher__is_superuser=True) | Q(teacher__is_staff=True)
-        )
+        ).order_by("-updated_at")
 
         # For list view, show different courses based on role
         if self.action == "list":
@@ -158,8 +157,10 @@ class CourseMaterialViewSet(viewsets.ModelViewSet):
         Return only active course materials for the specified course.
         """
         course_pk = self.kwargs.get("course_pk")
-        # Only return active materials
-        return CourseMaterial.objects.filter(course_id=course_pk, is_active=True)
+        # Only return active materials, ordered by upload date (newest first)
+        return CourseMaterial.objects.filter(
+            course_id=course_pk, is_active=True
+        ).order_by("-uploaded_at")
 
     def get_permissions(self):
         """
@@ -181,6 +182,7 @@ class CourseMaterialViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """
         Associate the material with the specified course when creating.
+        Also updates the course's updated_at timestamp.
         """
         course_pk = self.kwargs.get("course_pk")
         course = Course.objects.get(pk=course_pk)
@@ -188,7 +190,14 @@ class CourseMaterialViewSet(viewsets.ModelViewSet):
         # Check if the user has permission to add materials to this course
         self.check_object_permissions(self.request, course)
 
-        serializer.save(course=course)
+        # Save the material
+        serializer.save(course=course, is_active=True)
+
+        # Update the course's updated_at timestamp
+        from django.utils import timezone
+
+        course.updated_at = timezone.now()
+        course.save(update_fields=["updated_at"])
 
     def destroy(self, request, *args, **kwargs):
         """

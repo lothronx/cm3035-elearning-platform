@@ -20,6 +20,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 // Mock data and types - replace with your actual data fetching
 interface EnrolledStudentsProps {
   courseId: string
+  isCourseTeacher: boolean
+  isEnrolledStudents: boolean
 }
 
 interface Student {
@@ -35,7 +37,7 @@ interface User {
 }
 
 // Mock functions - replace with your actual API calls
-const fetchEnrolledStudents = async (courseId: string): Promise<Student[]> => {
+const fetchEnrolledStudents = async (courseId: string, isCourseTeacher: boolean, isEnrolledStudents: boolean): Promise<Student[]> => {
   // Simulate API call
   return [
     {

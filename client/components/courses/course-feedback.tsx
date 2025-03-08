@@ -21,6 +21,8 @@ import { Separator } from "@/components/ui/separator";
 // Mock data and types - replace with your actual data fetching
 interface CourseFeedbackProps {
   courseId: string;
+  isCourseTeacher: boolean;
+  isEnrolledStudents: boolean;
 }
 
 interface Feedback {
@@ -77,7 +79,7 @@ const deleteFeedback = async (feedbackId: string) => {
   // Implement your API call
 };
 
-export default function CourseFeedback({ courseId }: CourseFeedbackProps) {
+export default function CourseFeedback({ courseId, isCourseTeacher, isEnrolledStudents }: CourseFeedbackProps) {
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);

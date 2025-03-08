@@ -43,6 +43,7 @@ courses_router.register(
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("", include(courses_router.urls)),  # Add nested routes for course materials
     path("auth/register/", UserRegistrationView.as_view(), name="register"),
     path("auth/logout/", UserLogoutView.as_view(), name="logout"),
 ]
