@@ -149,6 +149,38 @@ class CourseViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @action(detail=False, methods=["get"])
+    def search(self, request):
+        """Search for courses based on title or description"""
+        query = request.query_params.get("q", "")
+        if not query:
+            return Response(
+                {"error": "Search query is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Base queryset excluding admin users
+        queryset = (
+            Course.objects.exclude(
+                Q(teacher__is_superuser=True) | Q(teacher__is_staff=True)
+            )
+            .filter(Q(title__icontains=query) | Q(description__icontains=query))
+            .order_by("-updated_at")
+        )
+
+        # Filter based on user role and active status
+        if request.user.role != "teacher":
+            queryset = queryset.filter(is_active=True)
+        else:
+            queryset = queryset.filter(
+                Q(is_active=True) | Q(teacher=request.user)
+            ).distinct()
+
+        serializer = CourseListSerializer(
+            queryset, many=True, context={"request": request}
+        )
+        return Response(serializer.data)
+
 
 class CourseMaterialViewSet(viewsets.ModelViewSet):
     """

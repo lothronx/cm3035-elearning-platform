@@ -15,6 +15,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { handleUnauthorized } from "@/lib/auth";
 import { useUser } from "@/contexts/user-context";
 
@@ -25,9 +33,32 @@ const mockNotifications = [
   { id: 3, message: "New course recommendation", read: true, time: "Yesterday" },
 ];
 
+// Types for search results
+type BaseSearchResult = {
+  id: string;
+};
+
+type StudentSearchResult = BaseSearchResult & {
+  username: string;
+  first_name: string;
+  last_name: string;
+  photo?: string;
+  role: "student";
+};
+
+type CourseSearchResult = BaseSearchResult & {
+  title: string;
+  description: string;
+  is_active: boolean;
+};
+
+type SearchResult = StudentSearchResult | CourseSearchResult;
+
 export function Navbar() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [notifications, setNotifications] = useState(mockNotifications);
   const [isScrolled, setIsScrolled] = useState(false);
   const { userRole } = useUser();
@@ -42,11 +73,56 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      toast.info(`Searching for: ${searchQuery}`);
-      // router.push(`/courses/search?q=${encodeURIComponent(searchQuery)}`)
+    const value = searchQuery.trim();
+
+    if (value) {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/${
+            userRole === "teacher" ? "users" : "courses"
+          }/search/?q=${encodeURIComponent(value)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Search failed");
+        }
+
+        const data = await response.json();
+        setSearchResults(data);
+        setIsSearchOpen(true);
+      } catch {
+        toast.error("Failed to perform search");
+        setSearchResults([]);
+      }
+    } else {
+      setSearchResults([]);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    if (!e.target.value.trim()) {
+      setSearchResults([]);
+      setIsSearchOpen(false);
+    }
+  };
+
+  const handleSelectResult = (result: SearchResult) => {
+    setIsSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+
+    if ("username" in result) {
+      router.push(`/members/${result.id}`);
+    } else {
+      router.push(`/courses/${result.id}`);
     }
   };
 
@@ -108,16 +184,98 @@ export function Navbar() {
 
         <div className="flex items-center gap-3">
           {/* Search Bar */}
-          <form onSubmit={handleSearch} className="relative hidden md:block">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-            <Input
-              type="search"
-              placeholder="Search..."
-              className="w-full max-w-[200px] bg-background-light border-slate-200 pl-8 text-sm transition-all focus:max-w-xs dark:border-slate-700 lg:max-w-xs"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </form>
+          <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+            <PopoverTrigger asChild>
+              <div className="relative hidden md:block">
+                <form onSubmit={handleSearch}>
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                  <Input
+                    type="search"
+                    placeholder={
+                      userRole === "teacher" ? "Search students & courses..." : "Search courses..."
+                    }
+                    className="w-full max-w-[250px] bg-background-light border-slate-200 pl-8 text-sm transition-all focus:max-w-xs dark:border-slate-700 lg:max-w-xs"
+                    value={searchQuery}
+                    onChange={handleInputChange}
+                  />
+                </form>
+              </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-[400px] p-0" align="start">
+              <Command>
+                <CommandList>
+                  <CommandEmpty>No results found.</CommandEmpty>
+                  {userRole === "teacher" && (
+                    <>
+                      <CommandGroup heading="Students">
+                        {searchResults
+                          .filter((result): result is StudentSearchResult => "username" in result)
+                          .map((student) => (
+                            <CommandItem
+                              key={student.id}
+                              onSelect={() => handleSelectResult(student)}
+                              className="flex items-center gap-2 cursor-pointer"
+                              value={student.username}>
+                              {student.photo && (
+                                <img
+                                  src={student.photo}
+                                  alt={student.username}
+                                  className="w-6 h-6 rounded-full"
+                                />
+                              )}
+                              <div>
+                                <p className="font-medium">
+                                  {student.first_name} {student.last_name}
+                                </p>
+                                <p className="text-sm text-slate-500">@{student.username}</p>
+                              </div>
+                            </CommandItem>
+                          ))}
+                      </CommandGroup>
+                      <CommandGroup heading="Courses">
+                        {searchResults
+                          .filter((result): result is CourseSearchResult => "title" in result)
+                          .map((course) => (
+                            <CommandItem
+                              key={course.id}
+                              onSelect={() => handleSelectResult(course)}
+                              className="cursor-pointer"
+                              value={course.title}>
+                              <div>
+                                <p className="font-medium">{course.title}</p>
+                                <p className="text-sm text-slate-500 truncate">
+                                  {course.description}
+                                </p>
+                              </div>
+                            </CommandItem>
+                          ))}
+                      </CommandGroup>
+                    </>
+                  )}
+                  {userRole !== "teacher" && (
+                    <CommandGroup heading="Courses">
+                      {searchResults
+                        .filter((result): result is CourseSearchResult => "title" in result)
+                        .map((course) => (
+                          <CommandItem
+                            key={course.id}
+                            onSelect={() => handleSelectResult(course)}
+                            className="cursor-pointer"
+                            value={course.title}>
+                            <div>
+                              <p className="font-medium">{course.title}</p>
+                              <p className="text-sm text-slate-500 truncate">
+                                {course.description}
+                              </p>
+                            </div>
+                          </CommandItem>
+                        ))}
+                    </CommandGroup>
+                  )}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
 
           {/* Notifications */}
           <DropdownMenu>

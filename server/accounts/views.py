@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
+from django.db.models import Q
 
 from api.permissions import IsTeacher
 from accounts.models import User
@@ -289,3 +290,33 @@ class UserViewSet(viewsets.ViewSet):
                 {"error": "User not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+    @action(
+        detail=False, methods=["get"], permission_classes=[IsAuthenticated, IsTeacher]
+    )
+    def search(self, request):
+        """Search for students by name or username. Only accessible by teachers."""
+        query = request.query_params.get("q", "")
+        if not query:
+            return Response(
+                {"error": "Search query is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Only search for students, exclude admin users and other teachers
+        queryset = (
+            User.objects.filter(role="student")
+            .exclude(
+                Q(is_superuser=True)
+                | Q(is_staff=True)  # Exclude admin users per security requirements
+            )
+            .filter(
+                Q(username__icontains=query)
+                | Q(first_name__icontains=query)
+                | Q(last_name__icontains=query)
+            )
+            .order_by("username")
+        )
+
+        serializer = UserSerializer(queryset, many=True)
+        return Response(serializer.data)
