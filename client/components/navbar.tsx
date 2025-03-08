@@ -15,7 +15,7 @@ import { NotificationMenu } from "@/components/notification";
 export function Navbar() {
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
-  const { userRole } = useUser();
+  const { user } = useUser();
 
   // Add scroll effect to navbar
   useEffect(() => {
@@ -67,7 +67,7 @@ export function Navbar() {
               className="text-primary-foreground hover:text-primary dark:text-slate-300 text-md">
               <Link href="/courses">Explore</Link>
             </Button>
-            {userRole === "teacher" && (
+            {user?.role === "teacher" && (
               <Button
                 variant="ghost"
                 asChild
@@ -80,7 +80,7 @@ export function Navbar() {
 
         <div className="flex items-center gap-3">
           {/* Search Bar */}
-          <SearchBar userRole={userRole} />
+          <SearchBar userRole={user?.role} />
 
           {/* Notifications */}
           <NotificationMenu />

@@ -13,6 +13,7 @@ import {
 import { useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { fetchWithAuth } from "@/lib/auth";
+import { useUser } from "@/contexts/user-context";
 
 // Types for notifications
 type Notification = {
@@ -27,8 +28,7 @@ const initialNotifications: Notification[] = [];
 
 export function NotificationMenu() {
   const [notifications, setNotifications] = React.useState<Notification[]>(initialNotifications);
-  const [, setSocket] = React.useState<WebSocket | null>(null);
-  const [, setIsConnected] = React.useState(false);
+  const { socket, isConnected } = useUser();
 
   // Function to fetch existing notifications from the API
   const fetchNotifications = async () => {
@@ -52,34 +52,18 @@ export function NotificationMenu() {
     }
   };
 
-  // Connect to WebSocket when component mounts
+  // Fetch notifications when component mounts or when connection status changes
   useEffect(() => {
-    // Get the authentication token from local storage
-    const token = localStorage.getItem("accessToken");
-
-    // Don't connect if we don't have an auth token
-    if (!token) {
-      console.warn("No authentication token found. Cannot connect to WebSocket.");
-      return;
-    }
-
-    // Setup WebSocket connection
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-    const apiHost = apiUrl.replace(/^https?:\/\//, "");
-    const protocol = apiUrl.startsWith("https") ? "wss:" : "ws:";
-
-    // Add authentication token to the WebSocket URL as a query parameter
-    const wsUrl = `${protocol}//${apiHost}/ws/notifications/?token=${encodeURIComponent(token)}`;
-    const ws = new WebSocket(wsUrl);
-
-    ws.onopen = () => {
-      console.log("Connected to notifications websocket");
-      setIsConnected(true);
-      // Fetch existing notifications from the API
+    if (isConnected) {
       fetchNotifications();
-    };
+    }
+  }, [isConnected]);
 
-    ws.onmessage = (event) => {
+  // Handle incoming WebSocket messages
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleMessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
         if (data.type === "notification") {
@@ -101,25 +85,12 @@ export function NotificationMenu() {
       }
     };
 
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      setIsConnected(false);
-    };
+    socket.addEventListener("message", handleMessage);
 
-    ws.onclose = () => {
-      console.log("Disconnected from notifications websocket");
-      setIsConnected(false);
-    };
-
-    setSocket(ws);
-
-    // Clean up on unmount
     return () => {
-      if (ws) {
-        ws.close();
-      }
+      socket.removeEventListener("message", handleMessage);
     };
-  }, []);
+  }, [socket]);
 
   // Mark all notifications as read
   const markAllAsRead = async () => {

@@ -32,7 +32,7 @@ type SearchResult = {
   }>;
 };
 
-export function SearchBar({ userRole }: { userRole: string }) {
+export function SearchBar({ userRole }: { userRole: string | null }) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");

@@ -21,8 +21,8 @@ interface MyCoursesProps {
 }
 
 export function MyCourses({ courses, onCreateCourse }: MyCoursesProps) {
-  const { userRole } = useUser();
-  const isTeacher = userRole === "teacher";
+  const { user } = useUser();
+  const isTeacher = user?.role === "teacher";
   const title = isTeacher ? "Teaching" : "Enrolled";
 
   const [isModalOpen, setIsModalOpen] = useState(false);

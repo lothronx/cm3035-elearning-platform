@@ -8,11 +8,9 @@ import { MyCourses } from "@/components/dashboard/my-courses";
 import { ChatBox } from "@/components/chat-box";
 import { useRouter } from "next/navigation";
 import { handleUnauthorized, fetchWithAuth, checkAuthStatus } from "@/lib/auth";
-import { useUser } from "@/contexts/user-context";
 
 export default function Dashboard() {
   const router = useRouter();
-  const { updateUserData } = useUser();
 
   const [userData, setUserData] = useState({
     firstName: "",
@@ -43,8 +41,6 @@ export default function Dashboard() {
           status: data.status,
           courses: data.courses,
         });
-        // Update the global user context
-        updateUserData(data);
       } catch (error) {
         console.error(error);
       }

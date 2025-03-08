@@ -35,7 +35,7 @@ export function CourseFeedback({ courseId, isEnrolledStudents }: CourseFeedbackP
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [feedbackToDelete, setFeedbackToDelete] = useState<number | null>(null);
-  const { userID } = useUser();
+  const { user } = useUser();
 
   useEffect(() => {
     loadFeedback();
@@ -140,7 +140,7 @@ export function CourseFeedback({ courseId, isEnrolledStudents }: CourseFeedbackP
                       </p>
                     </div>
                   </div>
-                  {userID === item.student.id && (
+                  {user?.id === item.student.id && (
                     <Button
                       variant="ghost"
                       size="icon"

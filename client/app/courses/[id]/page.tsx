@@ -15,7 +15,7 @@ export default function CourseDetailPage() {
   const router = useRouter();
   const params = useParams();
   const courseId = params.id as string;
-  const { userRole, userID } = useUser();
+  const { user } = useUser();
   const [isCourseTeacher, setIsCourseTeacher] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
   const [isEnrolledStudents, setIsEnrolledStudents] = useState(false);
@@ -33,8 +33,8 @@ export default function CourseDetailPage() {
 
       try {
         const data = await fetchCourse(courseId);
-        setIsCourseTeacher(data.teacher.id === userID);
-        setIsStudent(userRole === "student");
+        setIsCourseTeacher(data.teacher.id === user?.id);
+        setIsStudent(user?.role === "student");
         setIsEnrolledStudents(data.is_enrolled || false);
       } catch (error) {
         if (error instanceof Error) {
@@ -52,7 +52,7 @@ export default function CourseDetailPage() {
     };
 
     loadCourse();
-  }, [courseId, router, userID, userRole]);
+  }, [courseId, router, user]);
 
   if (permissionDenied) {
     return (
