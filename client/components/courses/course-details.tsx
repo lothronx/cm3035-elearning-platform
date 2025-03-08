@@ -18,7 +18,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { CourseFormDialog } from "@/components/courses/course-form-dialog";
-import { fetchCourse, handleActivationToggle, handleEdit } from "@/utils/course-utils";
+import {
+  fetchCourse,
+  handleActivationToggle,
+  handleEdit,
+  handleEnroll,
+  handleLeave,
+  handleComplete,
+} from "@/utils/course-utils";
 
 interface Course {
   id: number;
@@ -56,60 +63,53 @@ export default function CourseDetails({
   const [formattedCreatedAt, setFormattedCreatedAt] = useState("");
   const [formattedUpdatedAt, setFormattedUpdatedAt] = useState("");
 
+  const loadCourse = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchCourse(courseId);
+      setCourse(data);
+      setFormattedCreatedAt(format(new Date(data.created_at), "MMM d, yyyy"));
+      setFormattedUpdatedAt(format(new Date(data.updated_at), "MMM d, yyyy 'at' h:mm a"));
+    } catch (error) {
+      console.error("Error fetching course:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadCourse = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchCourse(courseId);
-        setCourse(data);
-        setFormattedCreatedAt(format(new Date(data.created_at), "MMM d, yyyy"));
-        setFormattedUpdatedAt(format(new Date(data.updated_at), "MMM d, yyyy 'at' h:mm a"));
-      } catch (error) {
-        console.error("Error fetching course:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     loadCourse();
   }, [courseId]);
 
-  const handleEnroll = async () => {
-    // try {
-    //   const response = await fetchWithAuth(
-    //     `${process.env.NEXT_PUBLIC_API_URL}/api/courses/${courseId}/enrollment`,
-    //     { method: "POST" }
-    //   );
-    //   if (!response.ok) {
-    //     throw new Error("Failed to enroll");
-    //   }
-    //   const updatedCourse = await response.json();
-    //   setCourse(updatedCourse);
-    //   toast.success(
-    //     updatedCourse.is_enrolled ? "Successfully enrolled in course" : "Successfully left course"
-    //   );
-    // } catch (error) {
-    //   toast.error("Failed to update enrollment");
-    // }
+  const onEnroll = async () => {
+    try {
+      if (course?.is_enrolled) {
+        await handleLeave(courseId);
+        toast.success("Successfully left course");
+      } else {
+        await handleEnroll(courseId);
+        toast.success("Successfully enrolled in course");
+      }
+      // Refresh course data
+      await loadCourse();
+    } catch (error) {
+      toast.error(course?.is_enrolled ? "Failed to leave course" : "Failed to enroll in course");
+      console.error("Error updating enrollment:", error);
+    }
   };
 
-  const handleComplete = async () => {
-    // try {
-    //   const response = await fetchWithAuth(
-    //     `${process.env.NEXT_PUBLIC_API_URL}/api/courses/${courseId}/complete`,
-    //     { method: "POST" }
-    //   );
-    //   if (!response.ok) {
-    //     throw new Error("Failed to mark as complete");
-    //   }
-    //   const updatedCourse = await response.json();
-    //   setCourse(updatedCourse);
-    //   toast.success(
-    //     updatedCourse.is_completed ? "Course marked as completed" : "Course marked as incomplete"
-    //   );
-    // } catch (error) {
-    //   console.error("Error updating course completion status:", error);
-    //   toast.error("Failed to update course completion status");
-    // }
+  const onComplete = async () => {
+    try {
+      await handleComplete(courseId);
+      // Refresh course data
+      await loadCourse();
+      toast.success(
+        course?.is_completed ? "Course marked as incomplete" : "Course marked as complete"
+      );
+    } catch (error) {
+      toast.error("Failed to update course completion status");
+      console.error("Error updating completion status:", error);
+    }
   };
 
   const onActivationToggle = async () => {
@@ -176,14 +176,14 @@ export default function CourseDetails({
               {isStudent && (
                 <div className="flex gap-2">
                   <Button
-                    onClick={handleEnroll}
+                    onClick={onEnroll}
                     size="sm"
                     variant={course.is_enrolled ? "outline" : "default"}>
                     {course.is_enrolled ? "Leave Course" : "Enroll Now"}
                   </Button>
                   {course.is_enrolled && (
                     <Button
-                      onClick={handleComplete}
+                      onClick={onComplete}
                       size="sm"
                       variant={course.is_completed ? "outline" : "default"}>
                       {course.is_completed ? "Mark as Incomplete" : "Mark as Complete"}

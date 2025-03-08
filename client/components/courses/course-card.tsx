@@ -63,7 +63,7 @@ export function CourseCard({ course, onEnroll, onOpenCourse }: CourseCardProps) 
       {course.is_enrolled !== null && (
         <CardFooter>
           <Button
-            className="w-full disabled:bg-secondary"
+            className="w-full disabled:bg-secondary hover:bg-primary-foreground hover:text-primary"
             disabled={course.is_enrolled}
             onClick={(e) => {
               e.stopPropagation();

@@ -17,6 +17,68 @@ interface Course {
   is_completed: boolean | null;
 }
 
+export const handleEnroll = async (courseId: string) => {
+  try {
+    const response = await fetchWithAuth(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/courses/${courseId}/student-enrollment/`,
+      {
+        method: "POST",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to enroll in course");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error enrolling in course:", error);
+    throw error;
+  }
+};
+
+export const handleLeave = async (courseId: string) => {
+  try {
+    const response = await fetchWithAuth(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/courses/${courseId}/student-enrollment/`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to leave course");
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error leaving course:", error);
+    throw error;
+  }
+};
+
+export const handleComplete = async (courseId: string) => {
+  try {
+    const response = await fetchWithAuth(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/courses/${courseId}/progress/toggle_completion/`,
+      {
+        method: "PATCH",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to update completion status");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error updating completion status:", error);
+    throw error;
+  }
+};
+
 export const handleActivationToggle = async (courseId: string) => {
   try {
     const response = await fetchWithAuth(

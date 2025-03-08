@@ -16,6 +16,8 @@ from courses.views import (
     CourseMaterialViewSet,
     FeedbackViewSet,
     EnrollmentViewSet,
+    StudentEnrollmentViewSet,
+    StudentCourseProgressViewSet,
 )
 
 # from chat.views import ChatMessageViewSet
@@ -40,6 +42,12 @@ courses_router.register(r"feedback", FeedbackViewSet, basename="course-feedback"
 courses_router.register(
     r"enrollments", EnrollmentViewSet, basename="course-enrollments"
 )
+courses_router.register(
+    r"student-enrollment", StudentEnrollmentViewSet, basename="student-enrollment"
+)
+courses_router.register(
+    r"progress", StudentCourseProgressViewSet, basename="student-progress"
+)
 
 # Chat routes
 # router.register(r"messages", ChatMessageViewSet, basename="messages")
@@ -49,7 +57,7 @@ courses_router.register(
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("", include(courses_router.urls)),  # Add nested routes for course materials
+    path("", include(courses_router.urls)),
     path("auth/register/", UserRegistrationView.as_view(), name="register"),
     path("auth/logout/", UserLogoutView.as_view(), name="logout"),
 ]

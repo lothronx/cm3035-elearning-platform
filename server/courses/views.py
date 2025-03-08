@@ -20,6 +20,7 @@ from api.permissions import (
     IsEnrolledStudent,
     IsCourseTeacherOrEnrolledStudent,
     IsOwner,
+    IsStudent,
 )
 
 
@@ -352,3 +353,95 @@ class EnrollmentViewSet(
         context = super().get_serializer_context()
         context["request"] = self.request
         return context
+
+
+class StudentEnrollmentViewSet(viewsets.ViewSet):
+    """
+    ViewSet for students to manage their own course enrollments:
+    - POST /courses/{course_id}/student-enrollment/: Student can enroll in a course
+    - DELETE /courses/{course_id}/student-enrollment/: Student can unenroll from a course
+    """
+
+    permission_classes = [IsAuthenticated, IsStudent]
+
+    def create(self, request, course_pk=None):
+        """Handle enrollment creation"""
+        try:
+            # Check if course exists, is active, and not taught by admin
+            course = Course.objects.exclude(
+                Q(teacher__is_superuser=True) | Q(teacher__is_staff=True)
+            ).get(pk=course_pk, is_active=True)
+        except Course.DoesNotExist:
+            return Response(
+                {"detail": "Course not found or inactive"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check if student is already enrolled
+        if Enrollment.objects.filter(student=request.user, course=course).exists():
+            return Response(
+                {"detail": "Already enrolled in this course"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Create enrollment
+        enrollment = Enrollment.objects.create(
+            student=request.user, course=course, is_completed=False
+        )
+
+        return Response(
+            EnrollmentSerializer(enrollment).data, status=status.HTTP_201_CREATED
+        )
+
+    def delete(self, request, course_pk=None):
+        """Handle unenrollment"""
+        try:
+            # Get enrollment excluding admin/superuser courses
+            enrollment = (
+                Enrollment.objects.filter(student=request.user, course_id=course_pk)
+                .exclude(
+                    Q(course__teacher__is_superuser=True)
+                    | Q(course__teacher__is_staff=True)
+                )
+                .get()
+            )
+
+            enrollment.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Enrollment.DoesNotExist:
+            return Response(
+                {"detail": "Not enrolled in this course"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+
+class StudentCourseProgressViewSet(viewsets.GenericViewSet):
+    """
+    ViewSet for enrolled students to manage their course progress:
+    - PATCH /courses/{course_id}/progress/: Toggle course completion status
+    """
+
+    permission_classes = [IsAuthenticated, IsEnrolledStudent]
+    serializer_class = EnrollmentSerializer
+
+    def get_queryset(self):
+        """Return enrollments for the current student and specified course"""
+        course_pk = self.kwargs.get("course_pk")
+        return Enrollment.objects.filter(student=self.request.user, course_id=course_pk)
+
+    @action(detail=False, methods=["patch"])
+    def toggle_completion(self, request, course_pk=None):
+        """Toggle the completion status of a course for the enrolled student"""
+        try:
+            enrollment = self.get_queryset().get()
+        except Enrollment.DoesNotExist:
+            return Response(
+                {"detail": "Not enrolled in this course"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        enrollment.is_completed = not enrollment.is_completed
+        enrollment.save()
+
+        serializer = self.get_serializer(enrollment)
+        return Response(serializer.data, status=status.HTTP_200_OK)

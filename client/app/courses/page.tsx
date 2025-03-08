@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { ChatBox } from "@/components/chat-box";
 import { useRouter } from "next/navigation";
 import { handleUnauthorized, fetchWithAuth, checkAuthStatus } from "@/lib/auth";
+import { handleEnroll } from "@/utils/course-utils";
 
 interface Teacher {
   id: number;
@@ -58,7 +59,7 @@ export default function CoursesPage() {
   };
 
   // Function to handle course enrollment
-  const handleEnroll = async (courseId: number) => {
+  const onEnroll = async (courseId: number) => {
     try {
       const isAuthenticated = await checkAuthStatus();
 
@@ -67,17 +68,7 @@ export default function CoursesPage() {
         return;
       }
 
-      const response = await fetchWithAuth(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/courses/${courseId}/enroll/`,
-        {
-          method: "POST",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to enroll in course");
-      }
-
+      await handleEnroll(courseId.toString());
       // Refresh courses after enrollment
       await fetchCourses();
       toast.success("Successfully enrolled in course!");
@@ -115,7 +106,7 @@ export default function CoursesPage() {
             <CourseCard
               key={course.id}
               course={course}
-              onEnroll={handleEnroll}
+              onEnroll={onEnroll}
               onOpenCourse={handleOpenCourse}
             />
           ))}
