@@ -20,6 +20,9 @@ from courses.views import (
     StudentCourseProgressViewSet,
 )
 
+# Import notification views
+from notifications.views import get_notifications, mark_all_as_read, mark_as_read
+
 # from chat.views import ChatMessageViewSet
 
 
@@ -56,6 +59,10 @@ courses_router.register(
 
 
 urlpatterns = [
+    # Notification routes
+    path('notifications/', get_notifications, name='notifications'),
+    path('notifications/mark-all-read/', mark_all_as_read, name='mark-all-notifications-read'),
+    path('notifications/<int:notification_id>/mark-read/', mark_as_read, name='mark-notification-read'),
     path("", include(router.urls)),
     path("", include(courses_router.urls)),
     path("auth/register/", UserRegistrationView.as_view(), name="register"),

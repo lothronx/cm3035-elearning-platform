@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from courses.models import Course, Enrollment
 from api.permissions import IsStudent
+from notifications.services import create_course_enrollment_notification
 
 
 class StudentEnrollmentViewSet(viewsets.ViewSet):
@@ -41,6 +42,9 @@ class StudentEnrollmentViewSet(viewsets.ViewSet):
                 course=course,
                 student=request.user,
             )
+            
+            # Send notification to the teacher
+            create_course_enrollment_notification(enrollment)
 
             return Response(
                 {
