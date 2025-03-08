@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Course {
   id: number;
@@ -16,9 +17,9 @@ interface CourseCardProps {
 
 export function CourseCard({ course, isTeacher }: CourseCardProps) {
   return (
-    <Link href={`/courses/${course.id}`} className="group block">
-      <div className="rounded-xl border-dashed border-2 border-background bg-background-light p-4 shadow-sm transition-all duration-300 hover:bg-primary/10 hover:shadow-md">
-        <div className="mb-3 flex items-center">
+    <Link href={`/courses/${course.id}`}>
+      <Card className="h-full bg-background-light transition-all duration-300 hover:bg-primary/10 hover:shadow-md">
+        <CardHeader className="flex flex-row items-center justify-between">
           <Badge variant={course.is_active ? "default" : "secondary"}>
             {isTeacher
               ? course.is_active
@@ -28,12 +29,12 @@ export function CourseCard({ course, isTeacher }: CourseCardProps) {
               ? "Enrolled"
               : "Completed"}
           </Badge>
-        </div>
+        </CardHeader>
 
-        <h3 className="text-base font-medium text-secondary group-hover:text-secondary">
+        <CardTitle className="text-base font-medium text-secondary group-hover:text-secondary px-7">
           {course.name}
-        </h3>
-      </div>
+        </CardTitle>
+      </Card>
     </Link>
   );
 }
