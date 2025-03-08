@@ -27,30 +27,25 @@ export function MaterialCard({
       <div className="flex items-center space-x-4">
         <FileText className="h-5 w-5" />
         <div>
-          <h4 className="font-medium">{material.title}</h4>
+          <a
+            href={material.file}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium hover:underline">
+            {material.title}
+          </a>
           <p className="text-sm text-muted-foreground">
             Uploaded on {format(new Date(material.uploaded_at), "MMM d, yyyy")}
           </p>
         </div>
       </div>
-      <div className="flex items-center space-x-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          asChild
-          className="hover:bg-background hover:text-foreground">
-          <a href={material.file} target="_blank" rel="noopener noreferrer">
-            Download
-          </a>
-        </Button>
-        {isCourseTeacher && (
-          <MaterialDeleteDialog
-            courseId={courseId}
-            material={material}
-            onMaterialDeleted={onMaterialDeleted}
-          />
-        )}
-      </div>
+      {isCourseTeacher && (
+        <MaterialDeleteDialog
+          courseId={courseId}
+          material={material}
+          onMaterialDeleted={onMaterialDeleted}
+        />
+      )}
     </div>
   );
 }

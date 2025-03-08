@@ -72,26 +72,6 @@ class IsOwner(permissions.BasePermission):
         return False
 
 
-class ReadOnly(permissions.BasePermission):
-    """
-    Custom permission to only allow read-only methods.
-    """
-
-    def has_permission(self, request, view):
-        return request.method in permissions.SAFE_METHODS
-
-
-class IsTeacherOrReadOnly(permissions.BasePermission):
-    """
-    Custom permission to allow teachers full access but only read-only access to others.
-    """
-
-    def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return request.user.is_authenticated
-        return request.user.is_authenticated and request.user.role == "teacher"
-
-
 class IsCourseTeacherOrEnrolledStudent(permissions.BasePermission):
     """
     Custom permission to allow course teachers full access and enrolled students read-only access.

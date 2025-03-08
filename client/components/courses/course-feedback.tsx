@@ -1,12 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { useUser } from "@/contexts/user-context";
+import {
+  Feedback,
+  fetchCourseFeedback,
+  createCourseFeedback,
+  deleteCourseFeedback,
+} from "@/utils/course-feedback-utils";
 import { format } from "date-fns";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -15,124 +23,51 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 
-// Mock data and types - replace with your actual data fetching
 interface CourseFeedbackProps {
   courseId: string;
-  isCourseTeacher: boolean;
   isEnrolledStudents: boolean;
 }
 
-interface Feedback {
-  id: string;
-  studentId: string;
-  studentName: string;
-  comment: string;
-  createdAt: Date;
-}
-
-interface User {
-  id: string;
-  role: "teacher" | "student";
-  name: string;
-}
-
-// Mock functions - replace with your actual API calls
-const fetchFeedback = async (courseId: string): Promise<Feedback[]> => {
-  // Simulate API call
-  return [
-    {
-      id: "feedback-1",
-      studentId: "student-1",
-      studentName: "Alex Johnson",
-      comment: "Great course! I learned a lot about modern web development techniques.",
-      createdAt: new Date("2023-03-15"),
-    },
-    {
-      id: "feedback-2",
-      studentId: "student-2",
-      studentName: "Jamie Smith",
-      comment: "The course materials were well-organized and easy to follow. Would recommend!",
-      createdAt: new Date("2023-03-20"),
-    },
-  ];
-};
-
-const fetchCurrentUser = async (): Promise<User> => {
-  // Simulate API call
-  return {
-    id: "student-1", // Change ID to match a feedback item to test delete functionality
-    role: "student", // Change to "teacher" to see teacher view
-    name: "Alex Johnson",
-  };
-};
-
-const addFeedback = async (courseId: string, userId: string, comment: string) => {
-  console.log(`Adding feedback for course ${courseId} from user ${userId}: ${comment}`);
-  // Implement your API call
-};
-
-const deleteFeedback = async (feedbackId: string) => {
-  console.log(`Deleting feedback ${feedbackId}`);
-  // Implement your API call
-};
-
-export default function CourseFeedback({ courseId, isCourseTeacher, isEnrolledStudents }: CourseFeedbackProps) {
+export function CourseFeedback({ courseId, isEnrolledStudents }: CourseFeedbackProps) {
   const [feedback, setFeedback] = useState<Feedback[]>([]);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [newComment, setNewComment] = useState("");
+  const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [feedbackToDelete, setFeedbackToDelete] = useState<string | null>(null);
+  const [feedbackToDelete, setFeedbackToDelete] = useState<number | null>(null);
+  const { userID } = useUser();
 
-  // Fetch feedback and user data
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [feedbackData, userData] = await Promise.all([
-          fetchFeedback(courseId),
-          fetchCurrentUser(),
-        ]);
-        setFeedback(feedbackData);
-        setUser(userData);
-      } catch (error) {
-        console.error("Failed to load course feedback:", error);
-        toast.error("Failed to load course feedback");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
+    loadFeedback();
   }, [courseId]);
 
-  const handleSubmitFeedback = async () => {
-    if (!user || !newComment.trim()) return;
-
+  const loadFeedback = async () => {
     try {
-      await addFeedback(courseId, user.id, newComment);
-
-      // Simulate adding the new feedback to the list
-      const newFeedbackItem: Feedback = {
-        id: `feedback-${Date.now()}`,
-        studentId: user.id,
-        studentName: user.name,
-        comment: newComment,
-        createdAt: new Date(),
-      };
-
-      setFeedback([...feedback, newFeedbackItem]);
-      setNewComment("");
-
-      toast.success("Feedback submitted successfully");
-    } catch (error) {
-      toast.error("Failed to submit feedback");
+      const data = await fetchCourseFeedback(courseId);
+      setFeedback(data);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load feedback");
     }
   };
 
-  const handleDeleteFeedback = (feedbackId: string) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!comment.trim()) return;
+    setIsSubmitting(true);
+
+    try {
+      await createCourseFeedback(courseId, comment);
+      setComment("");
+      loadFeedback();
+      toast.success("Feedback submitted successfully");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to post feedback");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteClick = (feedbackId: number) => {
     setFeedbackToDelete(feedbackId);
     setDeleteDialogOpen(true);
   };
@@ -141,118 +76,107 @@ export default function CourseFeedback({ courseId, isCourseTeacher, isEnrolledSt
     if (!feedbackToDelete) return;
 
     try {
-      await deleteFeedback(feedbackToDelete);
-      setFeedback(feedback.filter((f) => f.id !== feedbackToDelete));
+      await deleteCourseFeedback(courseId, feedbackToDelete);
+      loadFeedback();
       toast.success("Feedback deleted successfully");
-    } catch (error) {
-      toast.error("Failed to delete feedback");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete feedback");
     } finally {
       setDeleteDialogOpen(false);
       setFeedbackToDelete(null);
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .toUpperCase();
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName[0]}${lastName[0]}`.toUpperCase();
   };
-
-  const canDeleteFeedback = (feedbackItem: Feedback) => {
-    if (!user) return false;
-    return user.id === feedbackItem.studentId;
-  };
-
-  if (loading || !user) {
-    return (
-      <div className="h-[300px] flex items-center justify-center">Loading course feedback...</div>
-    );
-  }
-
-  const isStudent = user.role === "student";
 
   return (
-    <Card className="border-none shadow-none  bg-background-light px-8">
-      <CardHeader className="px-0 pt-0">
-        <CardTitle className="text-xl text-secondary">Student Feedback</CardTitle>
+    <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
+      <CardHeader className="px-8">
+        <CardTitle className="text-2xl font-bold text-secondary">Student Feedback</CardTitle>
       </CardHeader>
-      <CardContent className="px-0">
+      <CardContent className="px-8">
+        {isEnrolledStudents && (
+          <form onSubmit={handleSubmit} className="mb-6">
+            <Textarea
+              placeholder="Share your feedback about this course…"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="mb-2 resize-none"
+            />
+            <Button
+              type="submit"
+              disabled={isSubmitting || !comment.trim()}
+              className="hover:bg-primary/90">
+              Post Feedback
+            </Button>
+          </form>
+        )}
+
         {feedback.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
+          <p className="text-center text-muted-foreground">
             No feedback available for this course yet.
-          </div>
+          </p>
         ) : (
           <div className="space-y-4">
             {feedback.map((item) => (
               <div
                 key={item.id}
-                className="p-4 bg-background-light rounded-lg border-dashed border-2 border-background">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>{getInitials(item.studentName)}</AvatarFallback>
+                className="rounded-lg border p-4 transition-colors hover:bg-accent hover:text-accent-foreground">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-secondary text-secondary-foreground">
+                        {getInitials(item.student.first_name, item.student.last_name)}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h4 className="font-medium">{item.studentName}</h4>
-                      <p className="text-xs text-muted-foreground">
-                        {format(item.createdAt, "MMM d, yyyy")}
+                      <h4 className="font-medium">
+                        {item.student.first_name} {item.student.last_name}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Posted on {format(new Date(item.created_at), "MMM d, yyyy")}
                       </p>
                     </div>
                   </div>
-                  {canDeleteFeedback(item) && (
+                  {userID === item.student.id && (
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDeleteFeedback(item.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                      <span className="sr-only">Delete feedback</span>
+                      onClick={() => handleDeleteClick(item.id)}
+                      className="h-8 w-8 hover:bg-background hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
-                <p className="mt-3 text-sm">{item.comment}</p>
+                <div className="mt-4 pl-14">
+                  <p className="text-sm">{item.comment}</p>
+                </div>
               </div>
             ))}
           </div>
         )}
-      </CardContent>
-      {isStudent && (
-        <>
-          <CardFooter className="flex flex-col items-start px-0">
-            <h4 className="font-medium mb-2 text-sm px-2">Leave Your Feedback</h4>
-            <Textarea
-              placeholder="Share your thoughts about this course..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="min-h-[100px] w-full mb-3"
-            />
-            <Button onClick={handleSubmitFeedback} disabled={!newComment.trim()} size="sm">
-              Submit Feedback
-            </Button>
-          </CardFooter>
-        </>
-      )}
 
-      {/* Delete Feedback Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Feedback</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete your feedback? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={confirmDeleteFeedback}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Feedback</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this feedback? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmDeleteFeedback}>
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
     </Card>
   );
 }

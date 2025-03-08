@@ -1,18 +1,26 @@
 # pylint: disable=E1101
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, mixins
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 
-from courses.models import Course, CourseMaterial
+from courses.models import Course, CourseMaterial, Feedback, Enrollment
 from courses.serializers import (
     CourseSerializer,
     CourseListSerializer,
     CourseDetailSerializer,
     CourseMaterialSerializer,
+    FeedbackSerializer,
+    EnrollmentSerializer,
 )
-from api.permissions import IsTeacher, IsCourseTeacher, IsCourseTeacherOrEnrolledStudent
+from api.permissions import (
+    IsTeacher,
+    IsCourseTeacher,
+    IsEnrolledStudent,
+    IsCourseTeacherOrEnrolledStudent,
+    IsOwner,
+)
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -227,3 +235,120 @@ class CourseMaterialViewSet(viewsets.ModelViewSet):
         self.check_object_permissions(request, course)
 
         return super().list(request, *args, **kwargs)
+
+
+class FeedbackViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing course feedback with different permission levels:
+    - GET /courses/{course_id}/feedback/: Course teacher and enrolled students can view feedback
+    - POST /courses/{course_id}/feedback/: Only enrolled students can post feedback
+    - DELETE /courses/{course_id}/feedback/{id}/: Only the feedback owner can delete
+    """
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = FeedbackSerializer
+
+    def get_queryset(self):
+        """Return feedback for the specified course"""
+        course_pk = self.kwargs.get("course_pk")
+        return Feedback.objects.filter(course_id=course_pk).order_by("-created_at")
+
+    def get_permissions(self):
+        """
+        Set permissions based on action:
+        - list, retrieve: IsAuthenticated & IsCourseTeacherOrEnrolledStudent
+        - create: IsAuthenticated & IsEnrolledStudent
+        - destroy: IsAuthenticated & IsOwner
+        """
+        if self.action in ["list", "retrieve"]:
+            self.permission_classes = [
+                IsAuthenticated,
+                IsCourseTeacherOrEnrolledStudent,
+            ]
+        elif self.action == "create":
+            self.permission_classes = [IsAuthenticated, IsEnrolledStudent]
+        elif self.action == "destroy":
+            self.permission_classes = [IsAuthenticated, IsOwner]
+        return super().get_permissions()
+
+    def perform_create(self, serializer):
+        """Associate the feedback with the current user and course"""
+        course_pk = self.kwargs.get("course_pk")
+        course = Course.objects.get(pk=course_pk)
+        serializer.save(student=self.request.user, course=course)
+
+
+class EnrollmentViewSet(
+    mixins.ListModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet
+):
+    """
+    ViewSet for managing course enrollments with different permission levels:
+    - GET /courses/{course_id}/enrollments/: Course teacher and enrolled students can view enrollments
+    - DELETE /courses/{course_id}/enrollments/: Only course teacher can bulk delete enrollments
+    """
+
+    serializer_class = EnrollmentSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["get", "delete"]  # Only allow GET and DELETE methods
+
+    def get_queryset(self):
+        """Return enrollments for the specified course, excluding admin users"""
+        course_pk = self.kwargs.get("course_pk")
+        return (
+            Enrollment.objects.filter(course_id=course_pk)
+            .exclude(Q(student__is_superuser=True) | Q(student__is_staff=True))
+            .select_related("student")
+            .order_by("enrolled_at")
+        )
+
+    def get_permissions(self):
+        """
+        Set permissions based on action:
+        - list, retrieve: IsAuthenticated & IsCourseTeacherOrEnrolledStudent
+        - destroy: IsAuthenticated & IsCourseTeacher
+        """
+        if self.action in ["list", "retrieve"]:
+            self.permission_classes = [
+                IsAuthenticated,
+                IsCourseTeacherOrEnrolledStudent,
+            ]
+        else:  # destroy
+            self.permission_classes = [IsAuthenticated, IsCourseTeacher]
+        return super().get_permissions()
+
+    def delete(self, request, *args, **kwargs):
+        """Handle bulk deletion of enrollments"""
+        course_pk = self.kwargs.get("course_pk")
+        student_ids = request.data.get("student_ids", [])
+
+        if not student_ids:
+            return Response(
+                {"error": "No student IDs provided for deletion"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get the course and check permissions
+        course = Course.objects.get(pk=course_pk)
+        self.check_object_permissions(request, course)
+
+        # Delete enrollments for the specified students, excluding admin users
+        deleted_count = (
+            Enrollment.objects.filter(course_id=course_pk, student_id__in=student_ids)
+            .exclude(Q(student__is_superuser=True) | Q(student__is_staff=True))
+            .delete()[0]
+        )
+
+        return Response(
+            {
+                "status": "success",
+                "message": f"Successfully deleted {deleted_count} enrollment(s)",
+                "deleted_count": deleted_count,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def get_serializer_context(self):
+        """Add request to serializer context"""
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context

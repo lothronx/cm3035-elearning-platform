@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CourseMaterials } from "@/components/courses/course-materials";
-import EnrolledStudents from "@/components/courses/enrolled-students";
-import CourseFeedback from "@/components/courses/course-feedback";
+import { CourseEnrollments } from "@/components/courses/course-enrollments";
+import { CourseFeedback } from "@/components/courses/course-feedback";
 import { FileText, Users, MessageSquare } from "lucide-react";
 
 interface CourseTabsProps {
@@ -44,18 +44,10 @@ export default function CourseTabs({
         <CourseMaterials courseId={courseId} isCourseTeacher={isCourseTeacher} />
       </TabsContent>
       <TabsContent value="students" className="mt-0">
-        <EnrolledStudents
-          courseId={courseId}
-          isCourseTeacher={isCourseTeacher}
-          isEnrolledStudents={isEnrolledStudents}
-        />
+        <CourseEnrollments courseId={courseId} isCourseTeacher={isCourseTeacher} />
       </TabsContent>
       <TabsContent value="feedback" className="mt-0">
-        <CourseFeedback
-          courseId={courseId}
-          isCourseTeacher={isCourseTeacher}
-          isEnrolledStudents={isEnrolledStudents}
-        />
+        <CourseFeedback courseId={courseId} isEnrolledStudents={isEnrolledStudents} />
       </TabsContent>
     </Tabs>
   );

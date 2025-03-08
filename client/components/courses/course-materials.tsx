@@ -30,7 +30,7 @@ export function CourseMaterials({ courseId, isCourseTeacher }: CourseMaterialsPr
   };
 
   return (
-    <Card className="mt-6 overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
+    <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
       <CardHeader className="px-8">
         <div className="flex items-center justify-between">
           <CardTitle className="text-2xl font-bold text-secondary">Course Materials</CardTitle>

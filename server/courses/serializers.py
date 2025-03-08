@@ -11,6 +11,14 @@ class TeacherSerializer(serializers.Serializer):
     last_name = serializers.CharField(read_only=True)
 
 
+class StudentSerializer(serializers.Serializer):
+    """Serializer for displaying student's details in feedback"""
+
+    id = serializers.IntegerField(read_only=True)
+    first_name = serializers.CharField(read_only=True)
+    last_name = serializers.CharField(read_only=True)
+
+
 class CourseSerializer(serializers.ModelSerializer):
     teacher = TeacherSerializer(read_only=True)
 
@@ -114,7 +122,7 @@ class CourseMaterialSerializer(serializers.ModelSerializer):
 
 
 class EnrollmentSerializer(serializers.ModelSerializer):
-    student = serializers.StringRelatedField()  # Display student's username
+    student = StudentSerializer(read_only=True)
     course = serializers.StringRelatedField()  # Display course title
     course_id = serializers.PrimaryKeyRelatedField(source="course", read_only=True)
 
@@ -133,10 +141,9 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 
 
 class FeedbackSerializer(serializers.ModelSerializer):
-    student = serializers.StringRelatedField()  # Display student's username
-    course = serializers.StringRelatedField()  # Display course title
+    student = StudentSerializer(read_only=True)
 
     class Meta:
         model = Feedback
-        fields = ["id", "student", "course", "comment", "created_at"]
+        fields = ["id", "student", "comment", "created_at"]
         read_only_fields = ["id", "created_at"]
