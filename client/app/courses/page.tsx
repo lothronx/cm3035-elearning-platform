@@ -3,89 +3,106 @@
 import { Toaster, toast } from "sonner";
 import { Navbar } from "@/components/navbar";
 import { CourseCard } from "@/components/courses/course-card";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChatBox } from "@/components/chat-box";
+import { useRouter } from "next/navigation";
+import { handleUnauthorized, fetchWithAuth, checkAuthStatus } from "@/lib/auth";
 
-// Sample course data
-const initialCourses = [
-  {
-    id: 1,
-    icon: "code",
-    title: "Introduction to Web Development",
-    description: "Learn the fundamentals of HTML, CSS, and JavaScript to build modern websites.",
-    teacher: "Sarah Johnson",
-    updated_at: "2023-11-15T10:30:00Z",
-    studentCount: 1243,
-    enrolled: false,
-  },
-  {
-    id: 2,
-    icon: "fileText",
-    title: "Advanced JavaScript Patterns",
-    description:
-      "Master advanced JavaScript concepts including closures, prototypes, and design patterns.",
-    teacher: "Michael Chen",
-    updated_at: "2023-12-01T14:45:00Z",
-    studentCount: 856,
-    enrolled: true,
-  },
-  {
-    id: 3,
-    icon: "bookOpen",
-    title: "React for Beginners",
-    description: "Start your journey with React and learn to build interactive user interfaces.",
-    teacher: "Emily Rodriguez",
-    updated_at: "2024-01-10T09:15:00Z",
-    studentCount: 2105,
-    enrolled: false,
-  },
-  {
-    id: 4,
-    icon: "code",
-    title: "Full Stack Development with Next.js",
-    description: "Build complete web applications with Next.js, React, and Node.js.",
-    teacher: "David Wilson",
-    updated_at: "2024-02-05T16:20:00Z",
-    studentCount: 978,
-    enrolled: false,
-  },
-  {
-    id: 5,
-    icon: "fileText",
-    title: "TypeScript Fundamentals",
-    description: "Learn how to use TypeScript to build type-safe JavaScript applications.",
-    teacher: "Jessica Lee",
-    updated_at: "2024-01-25T11:00:00Z",
-    studentCount: 645,
-    enrolled: false,
-  },
-  {
-    id: 6,
-    icon: "bookOpen",
-    title: "UI/UX Design Principles",
-    description:
-      "Understand the core principles of creating effective and beautiful user interfaces.",
-    teacher: "Robert Martinez",
-    updated_at: "2023-12-20T13:30:00Z",
-    studentCount: 1567,
-    enrolled: true,
-  },
-];
+interface Teacher {
+  id: number;
+  first_name: string;
+  last_name: string;
+}
+
+interface Course {
+  id: number;
+  title: string;
+  description: string;
+  teacher: Teacher;
+  updated_at: string;
+  enrolled_students_count: number;
+  is_enrolled: boolean | null;
+  is_completed: boolean | null;
+}
 
 export default function CoursesPage() {
-  const [courses, setCourses] = useState(initialCourses);
+  const router = useRouter();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  const fetchCourses = async () => {
+    try {
+      const isAuthenticated = await checkAuthStatus();
+
+      if (!isAuthenticated) {
+        handleUnauthorized(router);
+        return;
+      }
+
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/courses/`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch courses");
+      }
+      const data = await response.json();
+      setCourses(data);
+    } catch (error) {
+      toast.error("Failed to load courses. Please try again later.");
+      console.error("Error fetching courses:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Function to handle course enrollment
-  const handleEnroll = (courseId: number) => {
-    setCourses(
-      courses.map((course) => (course.id === courseId ? { ...course, enrolled: true } : course))
-    );
+  const handleEnroll = async (courseId: number) => {
+    try {
+      const isAuthenticated = await checkAuthStatus();
+
+      if (!isAuthenticated) {
+        handleUnauthorized(router);
+        return;
+      }
+
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/courses/${courseId}/enroll/`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to enroll in course");
+      }
+
+      // Refresh courses after enrollment
+      await fetchCourses();
+      toast.success("Successfully enrolled in course!");
+    } catch (error) {
+      toast.error("Failed to enroll in course. Please try again later.");
+      console.error("Error enrolling in course:", error);
+    }
   };
 
   const handleOpenCourse = (courseId: number) => {
-    console.log("Opening course:", courseId)
-    toast.error("Failed to open course. Please try again later.");
+    window.location.href = `/courses/${courseId}`;
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background dark:bg-slate-950">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8 pt-24">
+          <div className="flex items-center justify-center h-[60vh]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background dark:bg-slate-950">
@@ -104,7 +121,6 @@ export default function CoursesPage() {
           ))}
         </div>
       </div>
-      {/* Chat Box */}
       <ChatBox />
     </div>
   );
