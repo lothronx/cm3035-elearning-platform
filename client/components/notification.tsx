@@ -128,12 +128,15 @@ export function NotificationMenu() {
       setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })));
 
       // Call API to mark notifications as read
-      const response = await fetch("/api/notifications/mark-all-read/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/notifications/mark_all_read/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (response.ok) {
         toast.success("All notifications marked as read");
@@ -145,6 +148,35 @@ export function NotificationMenu() {
     } catch (error) {
       console.error("Error marking notifications as read:", error);
       toast.error("Failed to mark notifications as read");
+    }
+  };
+
+  const handleMarkAsRead = async (notification: Notification) => {
+    try {
+      // Update UI immediately for better UX
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n))
+      );
+
+      // Call API to mark notification as read
+      const response = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/notifications/${notification.id}/`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        // Revert UI change if API call fails
+        await fetchNotifications();
+        toast.error("Failed to mark notification as read");
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      toast.error("Failed to mark notification as read");
     }
   };
 
@@ -175,7 +207,10 @@ export function NotificationMenu() {
         <div className="max-h-[300px] overflow-y-auto">
           {notifications.length > 0 ? (
             notifications.map((notification) => (
-              <DropdownMenuItem key={notification.id} className="cursor-pointer p-0">
+              <DropdownMenuItem
+                key={notification.id}
+                className="cursor-pointer p-0"
+                onClick={() => handleMarkAsRead(notification)}>
                 <div className="flex w-full flex-col border-b p-3 last:border-0">
                   <div className="flex items-start gap-2">
                     {!notification.read && (
