@@ -19,11 +19,11 @@ export function CourseCard({ course, isTeacher }: CourseCardProps) {
     <Link href={`/courses/${course.id}`} className="group block">
       <div className="rounded-xl border-dashed border-2 border-background bg-background-light p-4 shadow-sm transition-all duration-300 hover:bg-primary/10 hover:shadow-md">
         <div className="mb-3 flex items-center">
-          <Badge variant={course.is_active ? "default" : "outline"}>
+          <Badge variant={course.is_active ? "default" : "secondary"}>
             {isTeacher
               ? course.is_active
                 ? "Active"
-                : "Deactivated"
+                : "Archived"
               : course.is_active
               ? "Enrolled"
               : "Completed"}

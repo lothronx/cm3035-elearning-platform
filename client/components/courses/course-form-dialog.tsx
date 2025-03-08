@@ -13,31 +13,53 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-interface CreateCourseDialogProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (data: { title: string; description: string }) => Promise<void>;
-  isSubmitting?: boolean;
-  error?: string;
+interface CourseFormData {
+  title: string;
+  description: string;
 }
 
-export function CreateCourseDialog({
+interface CourseFormDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: CourseFormData) => Promise<void>;
+  isSubmitting?: boolean;
+  error?: string;
+  initialData?: CourseFormData;
+  mode?: "create" | "edit";
+}
+
+export function CourseFormDialog({
   isOpen,
   onOpenChange,
   onSubmit,
   isSubmitting = false,
   error,
-}: CreateCourseDialogProps) {
-  const [courseTitle, setCourseTitle] = useState("");
-  const [courseDescription, setCourseDescription] = useState("");
+  initialData,
+  mode = "create",
+}: CourseFormDialogProps) {
+  const [courseTitle, setCourseTitle] = useState(initialData?.title || "");
+  const [courseDescription, setCourseDescription] = useState(initialData?.description || "");
+
+  // Update form when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      setCourseTitle(initialData.title);
+      setCourseDescription(initialData.description);
+    }
+  }, [initialData]);
 
   // Reset form when dialog closes
   useEffect(() => {
     if (!isOpen) {
-      setCourseTitle("");
-      setCourseDescription("");
+      if (initialData && mode === "edit") {
+        setCourseTitle(initialData.title);
+        setCourseDescription(initialData.description);
+      } else {
+        setCourseTitle("");
+        setCourseDescription("");
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialData, mode]);
 
   const handleSubmit = async () => {
     if (!courseTitle.trim() || !courseDescription.trim()) {
@@ -52,17 +74,27 @@ export function CreateCourseDialog({
 
   const handleOpenChange = (open: boolean) => {
     onOpenChange(open);
-    if (!open) {
+    if (!open && mode === "create") {
       setCourseTitle("");
       setCourseDescription("");
     }
   };
 
+  const dialogTitle = mode === "create" ? "Create New Course" : "Edit Course";
+  const submitButtonText =
+    mode === "create"
+      ? isSubmitting
+        ? "Creating..."
+        : "Create Course"
+      : isSubmitting
+      ? "Saving..."
+      : "Save Changes";
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-background-light">
         <DialogHeader>
-          <DialogTitle>Create New Course</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           {error && (
@@ -72,18 +104,20 @@ export function CreateCourseDialog({
             <Label htmlFor="course-title">Course Title</Label>
             <Input
               id="course-title"
-              value={courseTitle || ""}
+              value={courseTitle}
               onChange={(e) => setCourseTitle(e.target.value)}
               placeholder="Enter course title"
+              className="bg-background-light"
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="course-description">Course Description</Label>
             <Textarea
               id="course-description"
-              value={courseDescription || ""}
+              value={courseDescription}
               onChange={(e) => setCourseDescription(e.target.value)}
               placeholder="Enter course description"
+              className="bg-background-light"
               rows={5}
             />
           </div>
@@ -93,7 +127,7 @@ export function CreateCourseDialog({
             Cancel
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Create Course"}
+            {submitButtonText}
           </Button>
         </DialogFooter>
       </DialogContent>

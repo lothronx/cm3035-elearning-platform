@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { format } from "date-fns"
-import { Edit, AlertTriangle, Calendar, Clock } from "lucide-react"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { Edit, AlertTriangle, Calendar, Clock } from "lucide-react";
+import { Toaster, toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -16,232 +16,252 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-
-// Mock data and types - replace with your actual data fetching
-interface CourseDetailsProps {
-  courseId: string
-}
+} from "@/components/ui/dialog";
+import { CourseFormDialog } from "@/components/courses/course-form-dialog";
+import { fetchCourse, handleActivationToggle, handleEdit } from "@/utils/course-utils";
 
 interface Course {
-  id: string
-  title: string
-  description: string
+  id: number;
+  title: string;
+  description: string;
   teacher: {
-    id: string
-    name: string
-  }
-  createdAt: Date
-  updatedAt: Date
-  isActive: boolean
+    id: number;
+    first_name: string;
+    last_name: string;
+  };
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+  is_enrolled: boolean | null;
+  is_completed: boolean | null;
 }
 
-interface User {
-  id: string
-  role: "teacher" | "student"
-  enrolledCourses: string[]
-  completedCourses: string[]
+interface CourseDetailsProps {
+  courseId: string;
+  isCourseTeacher: boolean;
+  isStudent: boolean;
 }
 
-// Mock functions - replace with your actual API calls
-const fetchCourse = async (id: string): Promise<Course> => {
-  // Simulate API call
-  return {
-    id,
-    title: "Advanced Web Development",
-    description: "Learn modern web development techniques including React, Next.js, and more.",
-    teacher: {
-      id: "teacher-1",
-      name: "Professor Smith",
-    },
-    createdAt: new Date("2023-01-15"),
-    updatedAt: new Date("2023-06-20"),
-    isActive: true,
-  }
-}
+export default function CourseDetails({
+  courseId,
+  isCourseTeacher,
+  isStudent,
+}: CourseDetailsProps) {
+  const [course, setCourse] = useState<Course | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string>();
+  const [formattedCreatedAt, setFormattedCreatedAt] = useState("");
+  const [formattedUpdatedAt, setFormattedUpdatedAt] = useState("");
 
-const fetchCurrentUser = async (): Promise<User> => {
-  // Simulate API call
-  return {
-    id: "user-1",
-    role: "student", // Change to "teacher" to see teacher view
-    enrolledCourses: ["course-1"],
-    completedCourses: [],
-  }
-}
-
-const enrollInCourse = async (courseId: string, userId: string) => {
-  console.log(`Enrolling user ${userId} in course ${courseId}`)
-  // Implement your API call
-}
-
-const completeCourse = async (courseId: string, userId: string) => {
-  console.log(`Marking course ${courseId} as completed for user ${userId}`)
-  // Implement your API call
-}
-
-const deactivateCourse = async (courseId: string) => {
-  console.log(`Deactivating course ${courseId}`)
-  // Implement your API call
-}
-
-export default function CourseDetails({ courseId }: CourseDetailsProps) {
-  const [course, setCourse] = useState<Course | null>(null)
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false)
-  const router = useRouter()
-
-  // Fetch course and user data
   useEffect(() => {
-    const loadData = async () => {
+    const loadCourse = async () => {
+      setLoading(true);
       try {
-        const [courseData, userData] = await Promise.all([fetchCourse(courseId), fetchCurrentUser()])
-        setCourse(courseData)
-        setUser(userData)
+        const data = await fetchCourse(courseId);
+        setCourse(data);
+        setFormattedCreatedAt(format(new Date(data.created_at), "MMM d, yyyy"));
+        setFormattedUpdatedAt(format(new Date(data.updated_at), "MMM d, yyyy 'at' h:mm a"));
       } catch (error) {
-        console.error("Failed to load course details:", error)
-        toast.error("Failed to load course details")
+        console.error("Error fetching course:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-
-    loadData()
-  }, [courseId])
+    };
+    loadCourse();
+  }, [courseId]);
 
   const handleEnroll = async () => {
-    if (!user) return
-    try {
-      await enrollInCourse(courseId, user.id)
-      setUser({
-        ...user,
-        enrolledCourses: [...user.enrolledCourses, courseId],
-      })
-      toast.success("You have successfully enrolled in this course")
-    } catch (error) {
-      toast.error("Failed to enroll in course")
-    }
-  }
+    // try {
+    //   const response = await fetchWithAuth(
+    //     `${process.env.NEXT_PUBLIC_API_URL}/api/courses/${courseId}/enrollment`,
+    //     { method: "POST" }
+    //   );
+    //   if (!response.ok) {
+    //     throw new Error("Failed to enroll");
+    //   }
+    //   const updatedCourse = await response.json();
+    //   setCourse(updatedCourse);
+    //   toast.success(
+    //     updatedCourse.is_enrolled ? "Successfully enrolled in course" : "Successfully left course"
+    //   );
+    // } catch (error) {
+    //   toast.error("Failed to update enrollment");
+    // }
+  };
 
   const handleComplete = async () => {
-    if (!user) return
+    // try {
+    //   const response = await fetchWithAuth(
+    //     `${process.env.NEXT_PUBLIC_API_URL}/api/courses/${courseId}/complete`,
+    //     { method: "POST" }
+    //   );
+    //   if (!response.ok) {
+    //     throw new Error("Failed to mark as complete");
+    //   }
+    //   const updatedCourse = await response.json();
+    //   setCourse(updatedCourse);
+    //   toast.success(
+    //     updatedCourse.is_completed ? "Course marked as completed" : "Course marked as incomplete"
+    //   );
+    // } catch (error) {
+    //   console.error("Error updating course completion status:", error);
+    //   toast.error("Failed to update course completion status");
+    // }
+  };
+
+  const onActivationToggle = async () => {
     try {
-      await completeCourse(courseId, user.id)
-      setUser({
-        ...user,
-        completedCourses: [...user.completedCourses, courseId],
-      })
-      toast.success("Course marked as completed")
+      const result = await handleActivationToggle(courseId);
+      setCourse((prevCourse) =>
+        prevCourse ? { ...prevCourse, is_active: result.is_active } : null
+      );
+      setDeactivateDialogOpen(false);
     } catch (error) {
-      toast.error("Failed to mark course as completed")
+      console.error("Error updating course status:", error);
+      toast.error("Failed to update course status");
     }
-  }
+  };
 
-  const handleDeactivate = async () => {
+  const onEdit = async (data: { title: string; description: string }) => {
     try {
-      await deactivateCourse(courseId)
-      setCourse(course ? { ...course, isActive: false } : null)
-      toast.success("Course has been deactivated")
-      setDeactivateDialogOpen(false)
-    } catch (error) {
-      toast.error("Failed to deactivate course")
+      setIsSubmitting(true);
+      setFormError(undefined);
+      const result = await handleEdit(courseId, data);
+      setCourse((prevCourse) => {
+        if (!prevCourse) return null;
+        return {
+          ...prevCourse,
+          ...result,
+        };
+      });
+      setEditDialogOpen(false);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Failed to update course");
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  if (loading) {
+    return <Skeleton className="h-[600px] w-full" />;
   }
 
-  const handleEdit = () => {
-    router.push(`/courses/${courseId}/edit`)
+  if (!course) {
+    return null;
   }
-
-  if (loading || !course || !user) {
-    return <div className="h-[200px] flex items-center justify-center">Loading course details...</div>
-  }
-
-  const isTeacher = user.role === "teacher"
-  const isEnrolled = user.enrolledCourses.includes(courseId)
-  const isCompleted = user.completedCourses.includes(courseId)
 
   return (
-    <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
-      <CardHeader className="px-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-3xl font-bold text-secondary">{course.title}</CardTitle>
-              {!course.isActive && (
-                <Badge variant="destructive" className="ml-2">
-                  Inactive
-                </Badge>
+    <>
+      <Toaster position="top-right" />
+      <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
+        <CardHeader className="px-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-3xl font-bold text-secondary">{course.title}</CardTitle>
+                {!course.is_active && (
+                  <Badge variant="destructive" className="ml-2">
+                    Inactive
+                  </Badge>
+                )}
+              </div>
+              <p className="text-muted-foreground">
+                Taught by {course.teacher.first_name} {course.teacher.last_name}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 self-start">
+              {isStudent && (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleEnroll}
+                    size="sm"
+                    variant={course.is_enrolled ? "outline" : "default"}>
+                    {course.is_enrolled ? "Leave Course" : "Enroll Now"}
+                  </Button>
+                  {course.is_enrolled && (
+                    <Button
+                      onClick={handleComplete}
+                      size="sm"
+                      variant={course.is_completed ? "outline" : "default"}>
+                      {course.is_completed ? "Mark as Incomplete" : "Mark as Complete"}
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {isCourseTeacher && (
+                <>
+                  <Button variant="secondary" onClick={() => setEditDialogOpen(true)} size="sm">
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </Button>
+                  <Dialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant={course.is_active ? "destructive" : "default"} size="sm">
+                        <AlertTriangle className="mr-2 h-4 w-4" />
+                        {course.is_active ? "Archive" : "Activate"}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>
+                          {course.is_active ? "Archive" : "Activate"} Course
+                        </DialogTitle>
+                        <DialogDescription>
+                          {course.is_active
+                            ? "Are you sure you want to archive this course? Other people will no longer be able to access it."
+                            : "Are you sure you want to activate this course? Other people will be able to access it."}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeactivateDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button
+                          variant={course.is_active ? "destructive" : "default"}
+                          onClick={onActivationToggle}>
+                          {course.is_active ? "Archive" : "Activate"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </>
               )}
             </div>
-            <p className="text-muted-foreground">Taught by {course.teacher.name}</p>
           </div>
-          <div className="flex items-center gap-2 self-start">
-            {isTeacher ? (
-              <>
-                <Button variant="outline" onClick={handleEdit} size="sm">
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </Button>
-                <Dialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="destructive" size="sm" disabled={!course.isActive}>
-                      <AlertTriangle className="mr-2 h-4 w-4" />
-                      Deactivate
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Deactivate Course</DialogTitle>
-                      <DialogDescription>
-                        Are you sure you want to deactivate this course? Students will no longer be
-                        able to enroll.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setDeactivateDialogOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button variant="destructive" onClick={handleDeactivate}>
-                        Deactivate
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </>
-            ) : (
-              <>
-                <Button onClick={handleEnroll} disabled={isEnrolled || !course.isActive} size="sm">
-                  {isEnrolled ? "Enrolled" : "Enroll"}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleComplete}
-                  disabled={!isEnrolled || isCompleted || !course.isActive}
-                  size="sm">
-                  {isCompleted ? "Completed" : "Mark Complete"}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="px-8">
-        <div className="space-y-4">
-          <p className="text-muted-foreground">{course.description}</p>
-          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center">
-              <Calendar className="mr-2 h-4 w-4" />
-              <span>Created: {format(course.createdAt, "MMM d, yyyy")}</span>
-            </div>
-            <div className="flex items-center">
-              <Clock className="mr-2 h-4 w-4" />
-              <span>Updated: {format(course.updatedAt, "MMM d, yyyy")}</span>
+        </CardHeader>
+        <CardContent className="px-8">
+          <div className="space-y-4">
+            <p className="text-muted-foreground">{course.description}</p>
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center">
+                <Calendar className="mr-2 h-4 w-4" />
+                Created {formattedCreatedAt}
+              </div>
+              <div className="flex items-center">
+                <Clock className="mr-2 h-4 w-4" />
+                Last updated {formattedUpdatedAt}
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      <CourseFormDialog
+        isOpen={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSubmit={onEdit}
+        isSubmitting={isSubmitting}
+        error={formError}
+        initialData={{
+          title: course.title,
+          description: course.description,
+        }}
+        mode="edit"
+      />
+    </>
   );
 }
-

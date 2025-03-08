@@ -11,7 +11,8 @@ from accounts.views import (
 )
 
 # Import ViewSets from each app
-from courses.views import CourseViewSet
+from courses.views import CourseViewSet, CourseMaterialViewSet
+
 # from chat.views import ChatMessageViewSet
 
 
@@ -26,10 +27,10 @@ router.register(r"members", UserViewSet, basename="user-profile")
 router.register(r"courses", CourseViewSet, basename="courses")
 
 # Nested router for course materials
-# courses_router = routers.NestedSimpleRouter(router, r"courses", lookup="course")
-# courses_router.register(
-#     r"materials", CourseMaterialViewSet, basename="course-materials"
-# )
+courses_router = routers.NestedSimpleRouter(router, r"courses", lookup="course")
+courses_router.register(
+    r"materials", CourseMaterialViewSet, basename="course-materials"
+)
 # courses_router.register(
 #     r"enrollments", EnrollmentViewSet, basename="course-enrollments"
 # )

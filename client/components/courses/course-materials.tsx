@@ -1,13 +1,10 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
-import { format } from "date-fns"
-import { Download, Trash2, Plus, FileText, Image, File } from "lucide-react"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { FileText, Trash2, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -16,278 +13,200 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  CourseMaterial,
+  fetchCourseMaterials,
+  uploadCourseMaterial,
+  deleteCourseMaterial,
+} from "@/utils/course-material-utils";
 
-// Mock data and types - replace with your actual data fetching
 interface CourseMaterialsProps {
-  courseId: string
+  courseId: string;
+  isCourseTeacher: boolean;
 }
 
-interface Material {
-  id: string
-  title: string
-  type: "pdf" | "image" | "other"
-  url: string
-  uploadedAt: Date
-}
+export default function CourseMaterials({ courseId, isCourseTeacher }: CourseMaterialsProps) {
+  const [materials, setMaterials] = useState<CourseMaterial[]>([]);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState<CourseMaterial | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string>();
 
-interface User {
-  id: string
-  role: "teacher" | "student"
-}
-
-// Mock functions - replace with your actual API calls
-const fetchMaterials = async (courseId: string): Promise<Material[]> => {
-  // Simulate API call
-  return [
-    {
-      id: "material-1",
-      title: "Course Syllabus",
-      type: "pdf",
-      url: "/materials/syllabus.pdf",
-      uploadedAt: new Date("2023-01-20"),
-    },
-    {
-      id: "material-2",
-      title: "Week 1 Slides",
-      type: "pdf",
-      url: "/materials/week1.pdf",
-      uploadedAt: new Date("2023-01-25"),
-    },
-    {
-      id: "material-3",
-      title: "Project Example",
-      type: "image",
-      url: "/materials/example.jpg",
-      uploadedAt: new Date("2023-02-05"),
-    },
-  ]
-}
-
-const fetchCurrentUser = async (): Promise<User> => {
-  // Simulate API call
-  return {
-    id: "user-1",
-    role: "student", // Change to "teacher" to see teacher view
-  }
-}
-
-const deleteMaterial = async (materialId: string) => {
-  console.log(`Deleting material ${materialId}`)
-  // Implement your API call
-}
-
-const addMaterial = async (courseId: string, material: { title: string; file: File }) => {
-  console.log(`Adding material ${material.title} to course ${courseId}`)
-  // Implement your API call
-}
-
-export default function CourseMaterials({ courseId }: CourseMaterialsProps) {
-  const [materials, setMaterials] = useState<Material[]>([])
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [addDialogOpen, setAddDialogOpen] = useState(false)
-  const [newMaterial, setNewMaterial] = useState({ title: "", file: null as File | null })
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [materialToDelete, setMaterialToDelete] = useState<string | null>(null)
-
-  // Fetch materials and user data
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [materialsData, userData] = await Promise.all([fetchMaterials(courseId), fetchCurrentUser()])
-        setMaterials(materialsData)
-        setUser(userData)
-      } catch (error) {
-        console.error("Failed to load course materials:", error)
-        toast.error("Failed to load course materials")
-      } finally {
-        setLoading(false)
-      }
+    loadMaterials();
+  }, [courseId]);
+
+  const loadMaterials = async () => {
+    try {
+      const data = await fetchCourseMaterials(courseId);
+      setMaterials(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load materials");
     }
+  };
 
-    loadData()
-  }, [courseId])
-
-  const handleDelete = async (materialId: string) => {
-    setMaterialToDelete(materialId)
-    setDeleteDialogOpen(true)
-  }
-
-  const confirmDelete = async () => {
-    if (!materialToDelete) return
+  const handleUpload = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     try {
-      await deleteMaterial(materialToDelete)
-      setMaterials(materials.filter((m) => m.id !== materialToDelete))
-      toast.success("Material deleted successfully")
-    } catch (error) {
-      toast.error("Failed to delete material")
+      setIsSubmitting(true);
+      setError(undefined);
+      await uploadCourseMaterial(courseId, formData);
+      await loadMaterials();
+      setUploadDialogOpen(false);
+      form.reset();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload material");
     } finally {
-      setDeleteDialogOpen(false)
-      setMaterialToDelete(null)
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setNewMaterial({ ...newMaterial, file: e.target.files[0] })
-    }
-  }
-
-  const handleAddMaterial = async () => {
-    if (!newMaterial.title || !newMaterial.file) {
-      toast.error("Please provide both title and file")
-      return
-    }
+  const handleDelete = async () => {
+    if (!selectedMaterial) return;
 
     try {
-      await addMaterial(courseId, newMaterial)
-
-      // Simulate adding the new material to the list
-      const fileType = newMaterial.file.type.includes("pdf")
-        ? "pdf"
-        : newMaterial.file.type.includes("image")
-          ? "image"
-          : "other"
-
-      const newMaterialObj: Material = {
-        id: `material-${Date.now()}`,
-        title: newMaterial.title,
-        type: fileType as "pdf" | "image" | "other",
-        url: URL.createObjectURL(newMaterial.file),
-        uploadedAt: new Date(),
-      }
-
-      setMaterials([...materials, newMaterialObj])
-      setNewMaterial({ title: "", file: null })
-      setAddDialogOpen(false)
-
-      toast.success("Material added successfully")
-    } catch (error) {
-      toast.error("Failed to add material")
+      setIsSubmitting(true);
+      setError(undefined);
+      await deleteCourseMaterial(courseId, selectedMaterial.id);
+      await loadMaterials();
+      setDeleteDialogOpen(false);
+      setSelectedMaterial(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete material");
+    } finally {
+      setIsSubmitting(false);
     }
-  }
-
-  const getFileIcon = (type: string) => {
-    switch (type) {
-      case "pdf":
-        return <FileText className="h-5 w-5 text-red-500" />
-      case "image":
-        return <Image className="h-5 w-5 text-blue-500" />
-      default:
-        return <File className="h-5 w-5 text-gray-500" />
-    }
-  }
-
-  if (loading || !user) {
-    return <div className="h-[300px] flex items-center justify-center">Loading course materials...</div>
-  }
-
-  const isTeacher = user.role === "teacher"
+  };
 
   return (
-    <Card className="border-none shadow-none px-8 bg-background-light">
-      <CardHeader className="flex flex-row items-center justify-between px-0 pt-0">
-        <CardTitle className="text-xl text-secondary">Course Materials</CardTitle>
-        {isTeacher && (
-          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Material
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Material</DialogTitle>
-                <DialogDescription>Upload a new resource for students</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    value={newMaterial.title}
-                    onChange={(e) => setNewMaterial({ ...newMaterial, title: e.target.value })}
-                    placeholder="Enter material title"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="file">File</Label>
-                  <Input id="file" type="file" onChange={handleFileChange} />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
-                  Cancel
+    <Card className="mt-6 overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
+      <CardHeader className="px-8">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-2xl font-bold text-secondary">Course Materials</CardTitle>
+          {isCourseTeacher && (
+            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="default" size="sm">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Material
                 </Button>
-                <Button onClick={handleAddMaterial}>Upload</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-      </CardHeader>
-      <CardContent className="px-0">
-        {materials.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">No materials available for this course yet.</div>
-        ) : (
-          <div className="space-y-2">
-            {materials.map((material) => (
-              <div
-                key={material.id}
-                className="flex items-center justify-between p-3 border rounded-md hover:bg-primary/10 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  {getFileIcon(material.type)}
-                  <div>
-                    <h4 className="font-medium">{material.title}</h4>
-                    <p className="text-xs text-muted-foreground">{format(material.uploadedAt, "MMM d, yyyy")}</p>
+              </DialogTrigger>
+              <DialogContent>
+                <form onSubmit={handleUpload}>
+                  <DialogHeader>
+                    <DialogTitle>Upload Course Material</DialogTitle>
+                    <DialogDescription>Upload a file as course material.</DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="title">Title</Label>
+                      <Input id="title" name="title" placeholder="Enter material title" required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="file">File</Label>
+                      <Input id="file" name="file" type="file" required />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  {isTeacher ? (
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(material.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                      <span className="sr-only">Delete</span>
+                  {error && <p className="text-sm text-destructive">{error}</p>}
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setUploadDialogOpen(false)}
+                      disabled={isSubmitting}>
+                      Cancel
                     </Button>
-                  ) : (
-                    <Button variant="ghost" size="icon" asChild>
-                      <a href={material.url} download target="_blank" rel="noopener noreferrer">
-                        <Download className="h-4 w-4" />
-                        <span className="sr-only">Download</span>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? "Uploading..." : "Upload"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="px-8">
+        <ScrollArea className="h-[400px] pr-4">
+          {materials.length === 0 ? (
+            <p className="text-center text-muted-foreground">No materials available</p>
+          ) : (
+            <div className="space-y-4">
+              {materials.map((material) => (
+                <div
+                  key={material.id}
+                  className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent hover:text-accent-foreground">
+                  <div className="flex items-center space-x-4">
+                    <FileText className="h-5 w-5" />
+                    <div>
+                      <h4 className="font-medium">{material.title}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Uploaded on {format(new Date(material.created_at), "MMM d, yyyy")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                      className="hover:bg-background hover:text-foreground">
+                      <a href={material.file} target="_blank" rel="noopener noreferrer">
+                        Download
                       </a>
                     </Button>
-                  )}
+                    {isCourseTeacher && (
+                      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hover:bg-destructive/90 hover:text-destructive-foreground"
+                            onClick={() => setSelectedMaterial(material)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Delete Material</DialogTitle>
+                            <DialogDescription>
+                              Are you sure you want to delete this material? This action cannot be
+                              undone.
+                            </DialogDescription>
+                          </DialogHeader>
+                          {error && <p className="text-sm text-destructive">{error}</p>}
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => setDeleteDialogOpen(false)}
+                              disabled={isSubmitting}>
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={handleDelete}
+                              disabled={isSubmitting}>
+                              {isSubmitting ? "Deleting..." : "Delete"}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </ScrollArea>
       </CardContent>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Material</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this material? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Card>
-  )
+  );
 }
-

@@ -30,21 +30,21 @@ export default function Dashboard() {
 
         if (!isAuthenticated) {
           handleUnauthorized(router);
-        } else {
-          const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/`);
-          const data = await response.json();
-
-          setUserData({
-            firstName: data.first_name,
-            lastName: data.last_name,
-            role: data.role,
-            photo: data.photo,
-            status: data.status,
-            courses: data.courses,
-          });
-          // Update the global user context
-          updateUserData(data);
+          return;
         }
+        const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/`);
+        const data = await response.json();
+
+        setUserData({
+          firstName: data.first_name,
+          lastName: data.last_name,
+          role: data.role,
+          photo: data.photo,
+          status: data.status,
+          courses: data.courses,
+        });
+        // Update the global user context
+        updateUserData(data);
       } catch (error) {
         console.error(error);
       }

@@ -5,9 +5,9 @@ import { Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from "@/contexts/user-context";
 import { useState } from "react";
-import { CreateCourseDialog } from "./create-course-dialog";
-import { CourseCard } from "./course-card";
-import { EmptyCourse } from "./empty-course";
+import { CourseFormDialog } from "@/components/courses/course-form-dialog";
+import { CourseCard } from "@/components/dashboard/course-card";
+import { EmptyCourse } from "@/components/dashboard/empty-course";
 
 interface Course {
   id: number;
@@ -69,12 +69,13 @@ export function MyCourses({ courses, onCreateCourse }: MyCoursesProps) {
         )}
       </CardContent>
 
-      <CreateCourseDialog
+      <CourseFormDialog
         isOpen={isModalOpen}
         onOpenChange={setIsModalOpen}
         onSubmit={handleCreateCourse}
         isSubmitting={isSubmitting}
         error={error}
+        mode="create"
       />
     </Card>
   );

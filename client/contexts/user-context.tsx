@@ -6,8 +6,7 @@ import { useRouter } from "next/navigation";
 
 interface UserContextType {
   userRole: string;
-  firstName: string;
-  lastName: string;
+  userID: number;
   updateUserData: (data: Record<string, string>) => void;
 }
 
@@ -17,15 +16,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [userData, setUserData] = useState({
     userRole: "",
-    firstName: "",
-    lastName: "",
+    userID: 0,
   });
 
   const updateUserData = (data: Record<string, string>) => {
     setUserData({
       userRole: data.role,
-      firstName: data.first_name,
-      lastName: data.last_name,
+      userID: Number(data.id),
     });
   };
 

@@ -8,14 +8,20 @@ import CourseFeedback from "@/components/courses/course-feedback"
 import { FileText, Users, MessageSquare } from "lucide-react"
 
 interface CourseTabsProps {
-  courseId: string
+  courseId: string;
+  isCourseTeacher: boolean;
+  isEnrolledStudents: boolean;
 }
 
-export default function CourseTabs({ courseId }: CourseTabsProps) {
-  const [activeTab, setActiveTab] = useState("materials")
+export default function CourseTabs({ courseId, isCourseTeacher, isEnrolledStudents }: CourseTabsProps) {
+  const [activeTab, setActiveTab] = useState("materials");
 
   return (
-    <Tabs defaultValue="materials" value={activeTab} onValueChange={setActiveTab} className="w-full">
+    <Tabs
+      defaultValue="materials"
+      value={activeTab}
+      onValueChange={setActiveTab}
+      className="w-full">
       <TabsList className="grid grid-cols-3 mb-2 w-full bg-background-light ">
         <TabsTrigger value="materials" className="flex items-center gap-2">
           <FileText className="h-4 w-4" />
@@ -40,6 +46,6 @@ export default function CourseTabs({ courseId }: CourseTabsProps) {
         <CourseFeedback courseId={courseId} />
       </TabsContent>
     </Tabs>
-  )
+  );
 }
 
