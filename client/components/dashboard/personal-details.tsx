@@ -1,23 +1,11 @@
 "use client";
 
 import type React from "react";
-
-import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Pencil, Check, X } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UpdatePhotoDialog } from "./update-photo-dialog";
+import { Status } from "./status";
 
 interface PersonalDetailsProps {
   userData: {
@@ -32,52 +20,8 @@ interface PersonalDetailsProps {
 }
 
 export function PersonalDetails({ userData, onStatusUpdate, onPhotoUpdate }: PersonalDetailsProps) {
-  const [isEditingStatus, setIsEditingStatus] = useState(false);
-  const [statusText, setStatusText] = useState(userData.status);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const statusInputRef = useRef<HTMLInputElement>(null);
-
-  // Focus the input when editing starts
-  useEffect(() => {
-    if (isEditingStatus && statusInputRef.current) {
-      statusInputRef.current.focus();
-    }
-  }, [isEditingStatus]);
-
-  const handleStatusSave = () => {
-    onStatusUpdate(statusText);
-    setIsEditingStatus(false);
-    toast.success("Status updated successfully");
-  };
-
-  const handleStatusCancel = () => {
-    setStatusText(userData.status);
-    setIsEditingStatus(false);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleStatusSave();
-    } else if (e.key === "Escape") {
-      handleStatusCancel();
-    }
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploadingImage(true);
-    onPhotoUpdate(file)
-      .then(() => {
-        toast.success("Profile picture updated");
-      })
-      .catch(() => {
-        toast.error("Failed to update profile picture");
-      })
-      .finally(() => {
-        setIsUploadingImage(false);
-      });
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName[0]}${lastName[0]}`.toUpperCase();
   };
 
   return (
@@ -86,57 +30,17 @@ export function PersonalDetails({ userData, onStatusUpdate, onPhotoUpdate }: Per
         <div className="flex flex-col items-center gap-6 p-6 sm:flex-row">
           {/* Profile Picture - Left Side */}
           <div className="relative shrink-0">
-            <div className="h-24 w-24 overflow-hidden rounded-full bg-slate-100 ring-4 ring-white/50 transition-all duration-300 hover:ring-primary/20 dark:bg-slate-800 dark:ring-slate-800/50 sm:h-28 sm:w-28">
-              <Image
-                src={userData.photo || "/blank.png"}
-                alt="Profile"
-                width={112}
-                height={112}
-                className="h-full w-full object-cover"
+            <Avatar className="h-28 w-28 ring-4 ring-white/50 transition-all duration-300 hover:ring-primary/20 dark:ring-slate-800/50">
+              <AvatarImage
+                src={userData.photo || ""}
+                alt={`${userData.firstName} ${userData.lastName}`}
+                className="object-cover"
               />
-            </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="secondary"
-                  className="absolute bottom-0 right-0 h-8 w-8 rounded-full shadow-md transition-transform duration-200 hover:scale-110 bg-secondary">
-                  <Camera className="h-4 w-4 text-primary-foreground" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-background-light">
-                <DialogHeader>
-                  <DialogTitle className="text-secondary">Update Profile Picture</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="flex justify-center">
-                    <div className="overflow-hidden rounded-full">
-                      <Image
-                        src={userData.photo || "/placeholder.svg"}
-                        alt="Current Profile"
-                        width={150}
-                        height={150}
-                        className="h-[150px] w-[150px] object-cover"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="picture">Upload new picture</Label>
-                    <Input
-                      id="picture"
-                      type="file"
-                      accept="image/*"
-                      className="bg-background"
-                      onChange={handleImageUpload}
-                      disabled={isUploadingImage}
-                    />
-                  </div>
-                  {isUploadingImage && (
-                    <div className="text-center text-sm text-muted-foreground">Uploading...</div>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
+              <AvatarFallback className="text-secondary text-5xl">
+                {getInitials(userData.firstName, userData.lastName)}
+              </AvatarFallback>
+            </Avatar>
+            <UpdatePhotoDialog currentPhoto={userData.photo} onPhotoUpdate={onPhotoUpdate} />
           </div>
 
           {/* Name and Status - Right Side */}
@@ -152,45 +56,7 @@ export function PersonalDetails({ userData, onStatusUpdate, onPhotoUpdate }: Per
 
             {/* Status */}
             <div className="w-full">
-              {isEditingStatus ? (
-                <div className="flex items-center gap-2">
-                  <Input
-                    ref={statusInputRef}
-                    value={statusText}
-                    onChange={(e) => setStatusText(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="What's on your mind?"
-                    className="h-9 transition-all duration-200"
-                  />
-                  <div className="flex gap-1">
-                    <Button
-                      size="icon"
-                      onClick={handleStatusSave}
-                      className="h-9 w-9 transition-all duration-200 hover:bg-green-500 hover:text-white">
-                      <Check className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={handleStatusCancel}
-                      className="h-9 w-9 transition-all duration-200 hover:bg-red-500 hover:text-white">
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center gap-2 sm:justify-start">
-                  <p className="text-sm text-slate-600 dark:text-slate-300">{userData.status}</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsEditingStatus(true)}
-                    className="h-7 px-2 text-slate-500 transition-colors duration-200 hover:text-secondary dark:text-slate-400">
-                    <Pencil className="mr-1 h-3 w-3" />
-                    Edit
-                  </Button>
-                </div>
-              )}
+              <Status initialStatus={userData.status} onStatusUpdate={onStatusUpdate} />
             </div>
           </div>
         </div>

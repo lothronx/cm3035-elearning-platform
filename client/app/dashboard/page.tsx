@@ -42,7 +42,6 @@ export default function Dashboard() {
             status: data.status,
             courses: data.courses,
           });
-           console.log(data);
           // Update the global user context
           updateUserData(data);
         }
@@ -113,6 +112,45 @@ export default function Dashboard() {
     }
   };
 
+  const createCourse = async (data: { title: string; description: string }): Promise<void> => {
+    try {
+      const isAuthenticated = await checkAuthStatus();
+
+      if (!isAuthenticated) {
+        handleUnauthorized(router);
+        return;
+      }
+
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/courses/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: data.title,
+          description: data.description,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to create course");
+      }
+
+      // Fetch updated course list
+      const dashboardResponse = await fetchWithAuth(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/`
+      );
+      const dashboardData = await dashboardResponse.json();
+      setUserData((prev) => ({ ...prev, courses: dashboardData.courses }));
+
+      toast.success("Course created successfully");
+    } catch (error) {
+      console.error("Error creating course:", error);
+      throw error;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background dark:bg-slate-950">
       <Toaster position="top-right" />
@@ -131,7 +169,7 @@ export default function Dashboard() {
 
           {/* My Courses Section */}
           <div className="transition-all duration-300 hover:shadow-md">
-            <MyCourses courses={userData.courses} />
+            <MyCourses courses={userData.courses} onCreateCourse={createCourse} />
           </div>
         </div>
       </main>
