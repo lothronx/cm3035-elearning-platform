@@ -16,7 +16,11 @@ from django.core.asgi import get_asgi_application
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "elearning.settings")
 django.setup()
 
-from notifications.routing import websocket_urlpatterns
+from notifications.routing import websocket_urlpatterns as notification_websocket_urlpatterns
+from chat.routing import websocket_urlpatterns as chat_websocket_urlpatterns
+
+# Combine all websocket URL patterns
+websocket_urlpatterns = notification_websocket_urlpatterns + chat_websocket_urlpatterns
 
 # Initialize Django ASGI application early to ensure the AppRegistry
 # is populated before importing code that may import ORM models.

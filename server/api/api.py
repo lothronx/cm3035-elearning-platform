@@ -23,7 +23,8 @@ from courses.views import (
 # Import notification views
 from notifications.views import NotificationViewSet
 
-# from chat.views import ChatMessageViewSet
+# Import chat views
+from chat.views import ChatMessageViewSet, FileUploadViewSet
 
 
 router = DefaultRouter()
@@ -53,7 +54,8 @@ courses_router.register(
 )
 
 # Chat routes
-# router.register(r"messages", ChatMessageViewSet, basename="messages")
+router.register(r"messages", ChatMessageViewSet, basename="messages")
+router.register(r"uploads", FileUploadViewSet, basename="uploads")
 
 # Notification routes
 router.register(r"notifications", NotificationViewSet, basename="notifications")
