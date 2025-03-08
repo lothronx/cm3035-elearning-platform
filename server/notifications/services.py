@@ -2,6 +2,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.contrib.auth import get_user_model
 from .models import Notification
+from courses.models import Enrollment
 
 User = get_user_model()
 
@@ -42,16 +43,6 @@ def create_notification(recipient, message):
 
 
 def create_course_enrollment_notification(enrollment):
-    """
-    Create a notification for the teacher when a student enrolls in their course
-
-    Args:
-        enrollment: Enrollment object
-
-    Returns:
-        Notification: The created notification object
-    """
-
     course = enrollment.course
     student = enrollment.student
     teacher = course.teacher
@@ -62,19 +53,21 @@ def create_course_enrollment_notification(enrollment):
 
 
 def create_course_unenrollment_notification(course, student):
-    """
-    Create a notification for the teacher when a student leaves (unenrolls from) their course
-
-    Args:
-        course: Course object
-        student: Student user object
-
-    Returns:
-        Notification: The created notification object
-    """
-
     teacher = course.teacher
 
     message = f"{student.get_full_name() or student.username} has left your course: {course.title}"
 
     return create_notification(recipient=teacher, message=message)
+
+
+def create_course_material_notification(course):
+    message = f"A new material has been uploaded to your course: {course.title}"
+    
+    # Create notifications for all enrolled students
+    notifications = []
+    for enrollment in Enrollment.objects.filter(course=course):
+        notifications.append(
+            create_notification(recipient=enrollment.student, message=message)
+        )
+
+    return notifications

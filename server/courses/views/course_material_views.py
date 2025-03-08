@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from courses.models import CourseMaterial
 from courses.serializers import CourseMaterialSerializer
 from api.permissions import IsCourseTeacher, IsCourseTeacherOrEnrolledStudent
+from notifications.services import create_course_material_notification
 
 
 class CourseMaterialViewSet(viewsets.ModelViewSet):
@@ -36,7 +37,10 @@ class CourseMaterialViewSet(viewsets.ModelViewSet):
         - update, partial_update, destroy: IsAuthenticated & IsCourseTeacher
         """
         if self.action in ["list", "retrieve"]:
-            self.permission_classes = [IsAuthenticated, IsCourseTeacherOrEnrolledStudent]
+            self.permission_classes = [
+                IsAuthenticated,
+                IsCourseTeacherOrEnrolledStudent,
+            ]
         else:
             self.permission_classes = [IsAuthenticated, IsCourseTeacher]
 
@@ -58,4 +62,22 @@ class CourseMaterialViewSet(viewsets.ModelViewSet):
         return Response(
             {"status": "success", "message": "Material deleted successfully"},
             status=status.HTTP_200_OK,
+        )
+
+    def perform_create(self, serializer):
+        """
+        Set the course from URL parameters when creating a new course material
+        """
+        course_pk = self.kwargs.get("course_pk")
+        return serializer.save(course_id=course_pk, is_active=True)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        material = self.perform_create(serializer)
+
+        create_course_material_notification(material.course)
+        return Response(
+            {"status": "success", "message": "Material uploaded successfully"},
+            status=status.HTTP_201_CREATED,
         )
