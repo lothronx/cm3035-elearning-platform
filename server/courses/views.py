@@ -40,27 +40,17 @@ class CourseViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Return appropriate queryset based on user role and request method:
-        - For teachers: include their own courses (active and inactive)
-        - For students/other users: include only active courses
         - Exclude superusers and staff users from results
         """
-        user = self.request.user
 
         # Base queryset excluding admin users
         base_queryset = Course.objects.exclude(
             Q(teacher__is_superuser=True) | Q(teacher__is_staff=True)
         ).order_by("-updated_at")
 
-        # For list view, show different courses based on role
+        # For list view, show only active courses
         if self.action == "list":
-            if user.role == "teacher":
-                # Teachers see all active courses plus their own courses (active or not)
-                return base_queryset.filter(
-                    Q(is_active=True) | Q(teacher=user)
-                ).distinct()
-            else:
-                # Students and others see only active courses
-                return base_queryset.filter(is_active=True)
+            return base_queryset.filter(is_active=True)
 
         # For retrieve/update, handle permissions in get_object
         return base_queryset
