@@ -81,7 +81,7 @@ export function Navbar() {
 
         <div className="flex items-center gap-3">
           {/* Search Bar */}
-          <SearchBar userRole={user?.role} />
+          <SearchBar userRole={user?.role as string} />
 
           {/* Notifications */}
           <NotificationMenu />

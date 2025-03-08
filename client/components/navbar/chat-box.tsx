@@ -169,7 +169,7 @@ export function ChatBox({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className={`fixed top-20 right-4 z-40 rounded-xl border bg-popover shadow-2xl overflow-hidden`}
+            className={`fixed top-18 right-4 z-40 rounded-xl border bg-popover shadow-2xl overflow-hidden`}
             style={{ width: `${chatWidth}px`, height: `${chatHeight}px` }}>
             <ChatInterface
               onClose={() => setIsChatOpen(false)}

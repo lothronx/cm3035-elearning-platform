@@ -29,15 +29,14 @@ export default function ChatWindow({
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="flex items-center p-2">
-        {showBackButton && (
+      {showBackButton && (
+        <div className="flex items-center p-2">
           <Button variant="ghost" size="sm" onClick={onToggleSidebar} className="mr-1">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-        )}
-        <h3 className="text-md font-medium">{chat.name}</h3>
-      </div>
-
+          <h3 className="text-md font-medium">{chat.name}</h3>
+        </div>
+      )}
       <ScrollArea className="flex-1 p-2">
         <div className="space-y-4">
           {chat.messages.map((message) => (
