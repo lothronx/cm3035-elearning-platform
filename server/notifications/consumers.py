@@ -3,6 +3,8 @@ import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.exceptions import TokenError
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -37,30 +39,12 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             logger.warning("WebSocket connected without token")
             return
 
-        # Manually parse the token to get user_id
+        # Parse and validate the token using DRF SimpleJWT
         try:
-            # Simple JWT token parsing - middle part contains payload
-            import base64
-            import json
+            # Validate and decode the token
+            access_token = AccessToken(token)
+            user_id = access_token["user_id"]
 
-            # Split the token into parts
-            parts = token.split(".")
-            if len(parts) != 3:
-                logger.warning("Invalid token format")
-                return
-
-            # Get the payload part (middle part)
-            payload_encoded = parts[1]
-
-            # Add padding if needed
-            payload_encoded += "=" * ((4 - len(payload_encoded) % 4) % 4)
-
-            # Decode the payload
-            payload_bytes = base64.urlsafe_b64decode(payload_encoded)
-            payload = json.loads(payload_bytes)
-
-            # Extract user_id
-            user_id = payload.get("user_id")
             if not user_id:
                 logger.warning("No user_id in token payload")
                 return
@@ -84,6 +68,8 @@ class NotificationConsumer(AsyncWebsocketConsumer):
                 )
             )
 
+        except TokenError as e:
+            logger.error("Invalid token: %s", str(e))
         except Exception as e:
             logger.error("Error processing token: %s", str(e))
 
