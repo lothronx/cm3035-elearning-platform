@@ -155,7 +155,7 @@ export default function CourseDetails({
 
   return (
     <>
-      <Toaster position="top-right" />
+      <Toaster position="bottom-right" />
       <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
         <CardHeader className="px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

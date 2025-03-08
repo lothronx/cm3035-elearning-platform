@@ -18,10 +18,8 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Get unread notifications for the authenticated user"""
-        return (
-            Notification.objects.filter(recipient=self.request.user)
-            .filter(is_read=False)
-            .order_by("-created_at")
+        return Notification.objects.filter(recipient=self.request.user).order_by(
+            "-created_at"
         )
 
     def list(self, request):

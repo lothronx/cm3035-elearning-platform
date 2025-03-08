@@ -24,7 +24,7 @@ export default function WelcomePage() {
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <Toaster position="top-right" />
+      <Toaster position="bottom-right" />
 
       {/* Welcome section */}
       <div className="flex flex-1 items-center justify-center bg-primary p-8 text-primary-foreground">
