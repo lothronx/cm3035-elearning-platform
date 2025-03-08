@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/contexts/user-context";
 
 interface MemberDetailsProps {
   userData: {
@@ -19,8 +18,6 @@ interface MemberDetailsProps {
 
 export function MemberDetails({ userData }: MemberDetailsProps) {
   const router = useRouter();
-  const { firstName, lastName } = useUser();
-  const isOwnProfile = firstName === userData.firstName && lastName === userData.lastName;
 
   return (
     <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
@@ -57,21 +54,19 @@ export function MemberDetails({ userData }: MemberDetailsProps) {
           </div>
 
           {/* Chat Button - Right Side */}
-          {!isOwnProfile && (
-            <div className="flex items-center">
-              <Button
-                onClick={() =>
-                  router.push(
-                    `/chat/${userData.firstName.toLowerCase()}-${userData.lastName.toLowerCase()}`
-                  )
-                }
-                variant="outline"
-                className="bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Chat with me
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center">
+            <Button
+              onClick={() =>
+                router.push(
+                  `/chat/${userData.firstName.toLowerCase()}-${userData.lastName.toLowerCase()}`
+                )
+              }
+              variant="outline"
+              className="bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground">
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Chat with me
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -215,8 +215,10 @@ class UserViewSet(viewsets.ViewSet):
         Returns photos, role, first_name, last_name, username, status
         Excludes superusers for security reasons
         """
-        # Exclude superusers and admin users from the results
-        users = User.objects.filter(is_superuser=False, is_staff=False)
+        # Exclude superusers and admin users from the results, also exclude the current user
+        users = User.objects.filter(is_superuser=False, is_staff=False).exclude(
+            id=request.user.id
+        )
         user_data = []
 
         for user in users:
