@@ -17,7 +17,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         self.group_name = None
 
     async def connect(self):
-        # Accept the connection first (important for debugging)
+        # Accept the connection first
         await self.accept()
 
         # Extract token from query string
