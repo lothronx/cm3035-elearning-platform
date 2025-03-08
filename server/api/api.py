@@ -26,8 +26,8 @@ from courses.views import (
 router = DefaultRouter()
 
 # User-related routes
+router.register(r"members", UserViewSet, basename="members")
 router.register(r"dashboard", DashboardViewSet, basename="user-dashboard")
-router.register(r"members", UserViewSet, basename="user-profile")
 
 
 # Course-related routes

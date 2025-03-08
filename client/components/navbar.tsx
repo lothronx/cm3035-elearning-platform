@@ -5,61 +5,15 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, LogOut, Search, Settings } from "lucide-react";
-import { toast } from "sonner";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { handleUnauthorized } from "@/lib/auth";
 import { useUser } from "@/contexts/user-context";
-
-// Mock notifications - in a real app, these would come from an API
-const mockNotifications = [
-  { id: 1, message: "New assignment in React course", read: false, time: "10 min ago" },
-  { id: 2, message: "Your project was graded", read: false, time: "2 hours ago" },
-  { id: 3, message: "New course recommendation", read: true, time: "Yesterday" },
-];
-
-// Types for search results
-type BaseSearchResult = {
-  id: string;
-};
-
-type StudentSearchResult = BaseSearchResult & {
-  username: string;
-  first_name: string;
-  last_name: string;
-  photo?: string;
-  role: "student";
-};
-
-type CourseSearchResult = BaseSearchResult & {
-  title: string;
-  description: string;
-  is_active: boolean;
-};
-
-type SearchResult = StudentSearchResult | CourseSearchResult;
+import { SearchBar } from "@/components/search-bar";
+import { NotificationMenu } from "@/components/notification";
 
 export function Navbar() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [notifications, setNotifications] = useState(mockNotifications);
   const [isScrolled, setIsScrolled] = useState(false);
   const { userRole } = useUser();
 
@@ -72,59 +26,6 @@ export function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const value = searchQuery.trim();
-
-    if (value) {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/${
-            userRole === "teacher" ? "users" : "courses"
-          }/search/?q=${encodeURIComponent(value)}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Search failed");
-        }
-
-        const data = await response.json();
-        setSearchResults(data);
-        setIsSearchOpen(true);
-      } catch {
-        toast.error("Failed to perform search");
-        setSearchResults([]);
-      }
-    } else {
-      setSearchResults([]);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    if (!e.target.value.trim()) {
-      setSearchResults([]);
-      setIsSearchOpen(false);
-    }
-  };
-
-  const handleSelectResult = (result: SearchResult) => {
-    setIsSearchOpen(false);
-    setSearchQuery("");
-    setSearchResults([]);
-
-    if ("username" in result) {
-      router.push(`/members/${result.id}`);
-    } else {
-      router.push(`/courses/${result.id}`);
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -141,11 +42,6 @@ export function Navbar() {
     } catch (error) {
       console.error("Logout failed:", error);
     }
-  };
-
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })));
-    toast.success("All notifications marked as read");
   };
 
   return (
@@ -184,169 +80,10 @@ export function Navbar() {
 
         <div className="flex items-center gap-3">
           {/* Search Bar */}
-          <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-            <PopoverTrigger asChild>
-              <div className="relative hidden md:block">
-                <form onSubmit={handleSearch}>
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                  <Input
-                    type="search"
-                    placeholder={
-                      userRole === "teacher" ? "Search students & courses..." : "Search courses..."
-                    }
-                    className="w-full max-w-[250px] bg-background-light border-slate-200 pl-8 text-sm transition-all focus:max-w-xs dark:border-slate-700 lg:max-w-xs"
-                    value={searchQuery}
-                    onChange={handleInputChange}
-                  />
-                </form>
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-[400px] p-0" align="start">
-              <Command>
-                <CommandList>
-                  <CommandEmpty>No results found.</CommandEmpty>
-                  {userRole === "teacher" && (
-                    <>
-                      <CommandGroup heading="Students">
-                        {searchResults
-                          .filter((result): result is StudentSearchResult => "username" in result)
-                          .map((student) => (
-                            <CommandItem
-                              key={student.id}
-                              onSelect={() => handleSelectResult(student)}
-                              className="flex items-center gap-2 cursor-pointer"
-                              value={student.username}>
-                              {student.photo && (
-                                <img
-                                  src={student.photo}
-                                  alt={student.username}
-                                  className="w-6 h-6 rounded-full"
-                                />
-                              )}
-                              <div>
-                                <p className="font-medium">
-                                  {student.first_name} {student.last_name}
-                                </p>
-                                <p className="text-sm text-slate-500">@{student.username}</p>
-                              </div>
-                            </CommandItem>
-                          ))}
-                      </CommandGroup>
-                      <CommandGroup heading="Courses">
-                        {searchResults
-                          .filter((result): result is CourseSearchResult => "title" in result)
-                          .map((course) => (
-                            <CommandItem
-                              key={course.id}
-                              onSelect={() => handleSelectResult(course)}
-                              className="cursor-pointer"
-                              value={course.title}>
-                              <div>
-                                <p className="font-medium">{course.title}</p>
-                                <p className="text-sm text-slate-500 truncate">
-                                  {course.description}
-                                </p>
-                              </div>
-                            </CommandItem>
-                          ))}
-                      </CommandGroup>
-                    </>
-                  )}
-                  {userRole !== "teacher" && (
-                    <CommandGroup heading="Courses">
-                      {searchResults
-                        .filter((result): result is CourseSearchResult => "title" in result)
-                        .map((course) => (
-                          <CommandItem
-                            key={course.id}
-                            onSelect={() => handleSelectResult(course)}
-                            className="cursor-pointer"
-                            value={course.title}>
-                            <div>
-                              <p className="font-medium">{course.title}</p>
-                              <p className="text-sm text-slate-500 truncate">
-                                {course.description}
-                              </p>
-                            </div>
-                          </CommandItem>
-                        ))}
-                    </CommandGroup>
-                  )}
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+          <SearchBar userRole={userRole} />
 
           {/* Notifications */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative aspect-square h-9 rounded-full text-primary-foreground hover:bg-primary-foreground hover:text-primary dark:text-slate-300 dark:hover:bg-primary">
-                <Bell className="h-4 w-4" />
-                {notifications.some((n) => !n.read) && (
-                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <div className="flex items-center justify-between border-b p-3">
-                <h3 className="font-medium">Notifications</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={markAllAsRead}
-                  className="h-auto text-xs text-primary">
-                  Mark all as read
-                </Button>
-              </div>
-              <div className="max-h-[300px] overflow-y-auto">
-                {notifications.length > 0 ? (
-                  notifications.map((notification) => (
-                    <DropdownMenuItem key={notification.id} className="cursor-pointer p-0">
-                      <div className="flex w-full flex-col border-b p-3 last:border-0">
-                        <div className="flex items-start gap-2">
-                          {!notification.read && (
-                            <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                          )}
-                          <div className="flex-1">
-                            <p
-                              className={`text-sm ${
-                                notification.read
-                                  ? "text-slate-500 dark:text-slate-400"
-                                  : "font-medium"
-                              }`}>
-                              {notification.message}
-                            </p>
-                            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                              {notification.time}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </DropdownMenuItem>
-                  ))
-                ) : (
-                  <div className="p-4 text-center text-sm text-slate-500 dark:text-slate-400">
-                    No notifications
-                  </div>
-                )}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Settings */}
-          <Button
-            variant="ghost"
-            size="icon"
-            asChild
-            className="aspect-square h-9 rounded-full text-primary-foreground hover:bg-primary-foreground hover:text-primary dark:text-slate-300 dark:hover:bg-primary">
-            <Link href="/settings">
-              <Settings className="h-4 w-4" />
-              <span className="sr-only">Settings</span>
-            </Link>
-          </Button>
+          <NotificationMenu />
 
           {/* Logout */}
           <Button

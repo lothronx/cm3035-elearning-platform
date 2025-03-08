@@ -16,46 +16,27 @@ class UserViewSet(viewsets.ViewSet):
 
     def get_permissions(self):
         """
-        Instantiate and return the list of permissions that this view requires.
-        - For list action (GET /members/), only teachers can access
-        - For retrieve action (GET /members/[id]), any authenticated user can access
+        Set permissions based on action:
+        - list, search: IsAuthenticated & IsTeacher
+        - retrieve: IsAuthenticated
         """
-        if self.action == "list":
-            permission_classes = [IsAuthenticated, IsTeacher]
+        if self.action in ["list", "search"]:
+            self.permission_classes = [IsAuthenticated, IsTeacher]
         else:
-            permission_classes = [IsAuthenticated]
-        return [permission() for permission in permission_classes]
+            self.permission_classes = [IsAuthenticated]
+        return super().get_permissions()
 
     def list(self, request):
         """
         List all users - only accessible to teachers
-        Returns photos, role, first_name, last_name, username, status
         Excludes superusers and staff users for security reasons
         """
         # Exclude superusers and admin users from the results, also exclude the current user
         users = User.objects.filter(is_superuser=False, is_staff=False).exclude(
             id=request.user.id
         )
-        user_data = []
-
-        for user in users:
-            user_data.append(
-                {
-                    "id": user.id,
-                    "username": user.username,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                    "role": user.role,
-                    "status": user.status,
-                    "photo": (
-                        request.build_absolute_uri(user.photo.url)
-                        if user.photo
-                        else None
-                    ),
-                }
-            )
-
-        return Response(user_data, status=status.HTTP_200_OK)
+        serializer = UserSerializer(users, many=True, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, pk=None):
         try:
@@ -73,10 +54,7 @@ class UserViewSet(viewsets.ViewSet):
             if user.role == "teacher":
                 # For teachers, get the active courses they teach
                 # Exclude courses where teacher is admin/superuser
-                queryset = Course.objects.filter(
-                    teacher=user,
-                    is_active=True
-                ).exclude(
+                queryset = Course.objects.filter(teacher=user, is_active=True).exclude(
                     Q(teacher__is_superuser=True) | Q(teacher__is_staff=True)
                 )
                 courses_taught = CourseSerializer(queryset, many=True).data
@@ -89,13 +67,7 @@ class UserViewSet(viewsets.ViewSet):
                 ]
             else:
                 # For students, get enrolled but not completed courses
-                # Exclude courses where teacher is admin/superuser
-                queryset = Enrollment.objects.filter(
-                    student=user,
-                    is_completed=False
-                ).exclude(
-                    Q(course__teacher__is_superuser=True) | Q(course__teacher__is_staff=True)
-                )
+                queryset = Enrollment.objects.filter(student=user, is_completed=False)
                 enrollments = EnrollmentSerializer(queryset, many=True).data
                 courses = [
                     {
@@ -105,32 +77,21 @@ class UserViewSet(viewsets.ViewSet):
                     for enrollment in enrollments
                 ]
 
-            return Response(
-                {
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                    "role": user.role,
-                    "photo": (
-                        request.build_absolute_uri(user.photo.url)
-                        if user.photo
-                        else None
-                    ),
-                    "status": user.status,
-                    "courses": courses,
-                },
-                status=status.HTTP_200_OK,
-            )
+            # Serialize user data
+            serializer = UserSerializer(user, context={"request": request})
+            response_data = serializer.data
+            response_data["courses"] = courses
+
+            return Response(response_data, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response(
                 {"error": "User not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-    @action(
-        detail=False, methods=["get"], permission_classes=[IsAuthenticated, IsTeacher]
-    )
+    @action(detail=False, methods=["get"])
     def search(self, request):
-        """Search for students by name or username. Only accessible by teachers."""
+        """Search for active users by name or username. Only accessible by teachers."""
         query = request.query_params.get("q", "")
         if not query:
             return Response(
@@ -138,20 +99,30 @@ class UserViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Only search for students, exclude admin users and other teachers
+        # Only search for active users
         queryset = (
-            User.objects.filter(role="student")
-            .exclude(
+            User.objects.exclude(
                 Q(is_superuser=True)
                 | Q(is_staff=True)  # Exclude admin users per security requirements
             )
             .filter(
-                Q(username__icontains=query)
-                | Q(first_name__icontains=query)
+                Q(first_name__icontains=query)
                 | Q(last_name__icontains=query)
+                | Q(username__icontains=query)
             )
-            .order_by("username")
+            .distinct()
         )
 
-        serializer = UserSerializer(queryset, many=True)
-        return Response(serializer.data)
+        # Return only specified fields
+        user_data = []
+        for user in queryset:
+            user_data.append(
+                {
+                    "id": user.id,
+                    "username": user.username,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "role": user.role,
+                }
+            )
+        return Response(user_data)

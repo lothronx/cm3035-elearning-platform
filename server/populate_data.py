@@ -42,8 +42,19 @@ def populate():
             status="Teaching Mobile Development",
         )
 
-    # Create Students
     with open("3.jpg", "rb") as f:
+        teacher3 = User.objects.create_user(
+            username="teacher3",
+            email="teacher3@elearning.org",
+            password="elearning",
+            role="teacher",
+            first_name="Bob",
+            last_name="Williams",
+            photo=File(f),
+            status="Teaching Python",
+        )
+    # Create Students
+    with open("4.jpg", "rb") as f:
         student1 = User.objects.create_user(
             username="student1",
             email="student1@elearning.org",
@@ -55,7 +66,7 @@ def populate():
             status="Learning Python",
         )
 
-    with open("4.jpg", "rb") as f:
+    with open("5.jpg", "rb") as f:
         student2 = User.objects.create_user(
             username="student2",
             email="student2@elearning.org",
@@ -67,7 +78,7 @@ def populate():
             status="Learning AdvancedWeb Development",
         )
 
-    with open("5.jpg", "rb") as f:
+    with open("6.jpg", "rb") as f:
         student3 = User.objects.create_user(
             username="student3",
             email="student3@elearning.org",
@@ -79,7 +90,7 @@ def populate():
             status="Learning Mobile Development",
         )
 
-    with open("6.jpg", "rb") as f:
+    with open("7.jpg", "rb") as f:
         student4 = User.objects.create_user(
             username="student4",
             email="student4@elearning.org",
@@ -91,7 +102,7 @@ def populate():
             status="Today is a good day",
         )
 
-    with open("7.jpg", "rb") as f:
+    with open("8.jpg", "rb") as f:
         student5 = User.objects.create_user(
             username="student5",
             email="student5@elearning.org",
@@ -101,6 +112,66 @@ def populate():
             last_name="Wilson",
             photo=File(f),
             status="Working on final project",
+        )
+
+    with open("9.jpg", "rb") as f:
+        student6 = User.objects.create_user(
+            username="student6",
+            email="student6@elearning.org",
+            password="elearning",
+            role="student",
+            first_name="Frank",
+            last_name="Johnson",
+            photo=File(f),
+            status="Learning Python",
+        )
+
+    with open("10.jpg", "rb") as f:
+        student7 = User.objects.create_user(
+            username="student7",
+            email="student7@elearning.org",
+            password="elearning",
+            role="student",
+            first_name="Grace",
+            last_name="Davis",
+            photo=File(f),
+            status="Learning Go",
+        )
+
+    with open("11.jpg", "rb") as f:
+        student8 = User.objects.create_user(
+            username="student8",
+            email="student8@elearning.org",
+            password="elearning",
+            role="student",
+            first_name="Hannah",
+            last_name="Miller",
+            photo=File(f),
+            status="Learning Rust",
+        )
+
+    with open("12.jpg", "rb") as f:
+        student9 = User.objects.create_user(
+            username="student9",
+            email="student9@elearning.org",
+            password="elearning",
+            role="student",
+            first_name="Isla",
+            last_name="White",
+            photo=File(f),
+            status="Learning C++",
+        )
+
+    with open("13.jpg", "rb") as f:
+        student10 = User.objects.create_user(
+            username="student10",
+            email="student10@elearning.org",
+            password="elearning",
+            role="student",
+            first_name="Jack",
+            last_name="Brown",
+            photo=File(f),
+            status="Learning JS",
         )
 
     # Create Courses
@@ -113,18 +184,92 @@ def populate():
     course2 = Course.objects.create(
         title="Mobile Development",
         description="Build cross platform mobile applications with react native and expo",
-        teacher=teacher2,
+        teacher=teacher1,
         is_active=True,
     )
 
-    # Enroll Students in Courses
-    Enrollment.objects.create(student=student1, course=course1)
-    Enrollment.objects.create(student=student2, course=course1)
-    Enrollment.objects.create(student=student3, course=course1)
+    course3 = Course.objects.create(
+        title="Data Structures and Algorithms",
+        description="Learn data structures and algorithms for efficient problem solving",
+        teacher=teacher1,
+        is_active=True,
+    )
+    course4 = Course.objects.create(
+        title="Computer Systems",
+        description="Learn computer systems and architecture for efficient programming",
+        teacher=teacher2,
+        is_active=True,
+    )
+    course5 = Course.objects.create(
+        title="Database Management",
+        description="Learn database management with SQL and NoSQL databases",
+        teacher=teacher2,
+        is_active=True,
+    )
+    course6 = Course.objects.create(
+        title="Operating Systems",
+        description="Learn operating systems concepts and implementation",
+        teacher=teacher2,
+        is_active=True,
+    )
+    course7 = Course.objects.create(
+        title="Artificial Intelligence",
+        description="Learn artificial intelligence concepts and implementation",
+        teacher=teacher3,
+        is_active=True,
+    )
+    course8 = Course.objects.create(
+        title="Machine Learning",
+        description="Learn machine learning concepts and implementation",
+        teacher=teacher3,
+        is_active=True,
+    )
+    course9 = Course.objects.create(
+        title="Computer Networks",
+        description="Learn computer networks concepts and implementation",
+        teacher=teacher3,
+        is_active=True,
+    )
+    course10 = Course.objects.create(
+        title="Software Engineering",
+        description="Learn software engineering concepts and implementation",
+        teacher=teacher1,
+        is_active=False,
+    )
 
-    Enrollment.objects.create(student=student3, course=course2)
-    Enrollment.objects.create(student=student4, course=course2)
-    Enrollment.objects.create(student=student5, course=course2)
+    # Enroll Students in Courses
+    import random
+
+    courses = [
+        course1,
+        course2,
+        course3,
+        course4,
+        course5,
+        course6,
+        course7,
+        course8,
+        course9,
+        course10,
+    ]
+    students = [
+        student1,
+        student2,
+        student3,
+        student4,
+        student5,
+        student6,
+        student7,
+        student8,
+        student9,
+        student10,
+    ]
+
+    for course in courses:
+        num_students = random.randint(3, 7)
+        enrolled_students = random.sample(students, num_students)
+        for student in enrolled_students:
+            Enrollment.objects.create(student=student, course=course)
 
     # Add Course Materials
     with open("awd-syllabus.pdf", "rb") as f:
@@ -143,36 +288,6 @@ def populate():
             is_active=True,
         )
 
-    with open("md-syllabus.pdf", "rb") as f:
-        material3 = CourseMaterial.objects.create(
-            course=course2,
-            title="MD Syllabus",
-            file=File(f),
-            is_active=True,
-        )
-
-    # Add Feedback
-    Feedback.objects.create(
-        student=student1,
-        course=course1,
-        comment="AWD is a Great course! Very informative.",
-    )
-    Feedback.objects.create(
-        student=student2,
-        course=course1,
-        comment="AWD is a Great course! Excellent teaching style!",
-    )
-    Feedback.objects.create(
-        student=student3,
-        course=course2,
-        comment="MD is a Great course! Very informative.",
-    )
-    Feedback.objects.create(
-        student=student4,
-        course=course2,
-        comment="MD is a Great course! Excellent teaching style!",
-    )
-
     # Add Chat Messages
     message1 = ChatMessage.objects.create(
         sender=student1,
@@ -190,50 +305,6 @@ def populate():
     # Attach Files to Chat Messages
     with open("awd-syllabus.pdf", "rb") as f:
         FileUpload.objects.create(chat_message=message1, file=File(f))
-
-    # Add Notifications
-    Notification.objects.create(
-        recipient=teacher1,
-        message=f"{student1.username} has enrolled in {course1.title}.",
-    )
-    Notification.objects.create(
-        recipient=teacher1,
-        message=f"{student2.username} has enrolled in {course1.title}.",
-    )
-    Notification.objects.create(
-        recipient=teacher1,
-        message=f"{student3.username} has enrolled in {course1.title}.",
-    )
-    Notification.objects.create(
-        recipient=teacher2,
-        message=f"{student3.username} has enrolled in {course2.title}.",
-    )
-    Notification.objects.create(
-        recipient=teacher2,
-        message=f"{student4.username} has enrolled in {course2.title}.",
-    )
-    Notification.objects.create(
-        recipient=teacher2,
-        message=f"{student5.username} has enrolled in {course2.title}.",
-    )
-    Notification.objects.create(
-        recipient=student1, message=f"New material uploaded for {course1.title}."
-    )
-    Notification.objects.create(
-        recipient=student2, message=f"New material uploaded for {course1.title}."
-    )
-    Notification.objects.create(
-        recipient=student3, message=f"New material uploaded for {course1.title}."
-    )
-    Notification.objects.create(
-        recipient=student3, message=f"New material uploaded for {course2.title}."
-    )
-    Notification.objects.create(
-        recipient=student4, message=f"New material uploaded for {course2.title}."
-    )
-    Notification.objects.create(
-        recipient=student5, message=f"New material uploaded for {course2.title}."
-    )
 
     print("Database populated with sample data!")
 
