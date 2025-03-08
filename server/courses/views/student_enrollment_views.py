@@ -4,7 +4,10 @@ from rest_framework.permissions import IsAuthenticated
 
 from courses.models import Course, Enrollment
 from api.permissions import IsStudent
-from notifications.services import create_course_enrollment_notification
+from notifications.services import (
+    create_course_enrollment_notification,
+    create_course_unenrollment_notification,
+)
 
 
 class StudentEnrollmentViewSet(viewsets.ViewSet):
@@ -29,9 +32,7 @@ class StudentEnrollmentViewSet(viewsets.ViewSet):
                 )
 
             # Check if student is already enrolled
-            if Enrollment.objects.filter(
-                course=course, student=request.user
-            ).exists():
+            if Enrollment.objects.filter(course=course, student=request.user).exists():
                 return Response(
                     {"error": "Already enrolled in this course"},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -42,7 +43,7 @@ class StudentEnrollmentViewSet(viewsets.ViewSet):
                 course=course,
                 student=request.user,
             )
-            
+
             # Send notification to the teacher
             create_course_enrollment_notification(enrollment)
 
@@ -66,7 +67,15 @@ class StudentEnrollmentViewSet(viewsets.ViewSet):
             enrollment = Enrollment.objects.get(
                 course_id=course_pk, student=request.user
             )
+
+            # Get course before deleting enrollment
+            course = enrollment.course
+            student = request.user
+
             enrollment.delete()
+
+            # Send notification to the teacher about student leaving
+            create_course_unenrollment_notification(course, student)
 
             return Response(
                 {
