@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Toaster, toast } from "sonner";
-import { Navbar } from "@/components/navbar";
+import { Navbar } from "@/components/navbar/navbar";
 import { PersonalDetails } from "@/components/dashboard/personal-details";
 import { MyCourses } from "@/components/dashboard/my-courses";
-import { ChatBox } from "@/components/chat-box";
+import { ChatBox } from "@/components/navbar/chat-box";
 import { useRouter } from "next/navigation";
 import { handleUnauthorized, fetchWithAuth, checkAuthStatus } from "@/lib/auth";
 
@@ -171,7 +171,6 @@ export default function Dashboard() {
       </main>
 
       {/* Chat Box */}
-      <ChatBox />
     </div>
   );
 }

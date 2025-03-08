@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { Toaster, toast } from "sonner";
 import { useParams, useRouter } from "next/navigation";
-import { Navbar } from "@/components/navbar";
-import { ChatBox } from "@/components/chat-box";
+import { Navbar } from "@/components/navbar/navbar";
+import { ChatBox } from "@/components/navbar/chat-box";
 import CourseDetails from "@/components/courses/course-details";
 import CourseTabs from "@/components/courses/course-tabs";
 import { checkAuthStatus, handleUnauthorized } from "@/lib/auth";
@@ -93,7 +93,6 @@ export default function CourseDetailPage() {
           )}
         </div>
       </div>
-      <ChatBox />
     </div>
   );
 }

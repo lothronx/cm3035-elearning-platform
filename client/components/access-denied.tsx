@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ShieldAlert, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Navbar } from "@/components/navbar";
+import { Navbar } from "@/components/navbar/navbar";
 
 interface AccessDeniedProps {
   message?: string;

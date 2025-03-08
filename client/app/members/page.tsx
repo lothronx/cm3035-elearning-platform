@@ -1,13 +1,13 @@
 "use client";
 
-import { Navbar } from "@/components/navbar";
+import { Navbar } from "@/components/navbar/navbar";
 import { Toaster, toast } from "sonner";
 import { MemberCard } from "@/components/members/member-card";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { checkAuthStatus, fetchWithAuth, handleUnauthorized } from "@/lib/auth";
 import { AccessDenied } from "@/components/access-denied";
-import { ChatBox } from "@/components/chat-box";
+import { ChatBox } from "@/components/navbar/chat-box";
 
 // Define the Member interface to match the API response
 interface Member {
@@ -101,7 +101,6 @@ export default function MembersPage() {
         )}
       </div>
       {/* Chat Box */}
-      <ChatBox />
     </div>
   );
 }

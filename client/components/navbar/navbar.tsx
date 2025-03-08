@@ -9,8 +9,9 @@ import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { handleUnauthorized } from "@/lib/auth";
 import { useUser } from "@/contexts/user-context";
-import { SearchBar } from "@/components/search-bar";
-import { NotificationMenu } from "@/components/notification";
+import { SearchBar } from "@/components/navbar/search-bar";
+import { NotificationMenu } from "@/components/navbar/notification";
+import { ChatBox } from "@/components/navbar/chat-box";
 
 export function Navbar() {
   const router = useRouter();
@@ -84,6 +85,9 @@ export function Navbar() {
 
           {/* Notifications */}
           <NotificationMenu />
+
+          {/* Chat Box */}
+          <ChatBox chatWidth={600} chatHeight={500} />
 
           {/* Logout */}
           <Button

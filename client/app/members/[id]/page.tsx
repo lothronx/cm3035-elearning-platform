@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { Navbar } from "@/components/navbar";
+import { Navbar } from "@/components/navbar/navbar";
 import { MemberDetails } from "@/components/members/member-details";
 import { MemberCourses } from "@/components/members/member-courses";
 import { handleUnauthorized, fetchWithAuth, checkAuthStatus } from "@/lib/auth";
 import { useRouter } from "next/navigation";
-import { ChatBox } from "@/components/chat-box";
+import { ChatBox } from "@/components/navbar/chat-box";
 
 export default function MemberDetailPage() {
   const router = useRouter();
@@ -70,7 +70,6 @@ export default function MemberDetailPage() {
         </div>
       </main>
       {/* Chat Box */}
-      <ChatBox />
     </div>
   );
 }
