@@ -28,7 +28,7 @@ const initialNotifications: Notification[] = [];
 
 export function NotificationMenu() {
   const [notifications, setNotifications] = React.useState<Notification[]>(initialNotifications);
-  const { socket, isConnected } = useUser();
+  const { notificationSocket, isNotificationConnected } = useUser();
 
   // Function to fetch existing notifications from the API
   const fetchNotifications = async () => {
@@ -54,14 +54,14 @@ export function NotificationMenu() {
 
   // Fetch notifications when component mounts or when connection status changes
   useEffect(() => {
-    if (isConnected) {
+    if (isNotificationConnected) {
       fetchNotifications();
     }
-  }, [isConnected]);
+  }, [isNotificationConnected]);
 
   // Handle incoming WebSocket messages
   useEffect(() => {
-    if (!socket) return;
+    if (!notificationSocket) return;
 
     const handleMessage = (event: MessageEvent) => {
       try {
@@ -85,12 +85,12 @@ export function NotificationMenu() {
       }
     };
 
-    socket.addEventListener("message", handleMessage);
+    notificationSocket.addEventListener("message", handleMessage);
 
     return () => {
-      socket.removeEventListener("message", handleMessage);
+      notificationSocket.removeEventListener("message", handleMessage);
     };
-  }, [socket]);
+  }, [notificationSocket]);
 
   // Mark all notifications as read
   const markAllAsRead = async () => {

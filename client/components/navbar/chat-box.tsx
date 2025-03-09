@@ -24,7 +24,7 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
   const [activeChatId, setActiveChatId] = useState(0);
   const [hasUnread, setHasUnread] = useState(false);
   const [open, setOpen] = useState(false);
-  const { socket, isConnected } = useUser();
+  const { chatSocket, isChatConnected } = useUser();
 
   // Handle chat session selection
   const handleSelectChat = useCallback(async (chatId: number) => {
@@ -113,7 +113,7 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
 
   // Handle incoming WebSocket messages
   useEffect(() => {
-    if (!socket) return;
+    if (!chatSocket) return;
 
     const handleMessage = (event: MessageEvent) => {
       const data = JSON.parse(event.data);
@@ -150,13 +150,13 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
       }
     };
 
-    socket.addEventListener("message", handleMessage);
-    return () => socket.removeEventListener("message", handleMessage);
-  }, [socket, activeChatId]);
+    chatSocket.addEventListener("message", handleMessage);
+    return () => chatSocket.removeEventListener("message", handleMessage);
+  }, [chatSocket, activeChatId]);
 
   // Fetch chat sessions when connected
   useEffect(() => {
-    if (!isConnected) return;
+    if (!isChatConnected) return;
 
     const fetchChatSessions = async () => {
       try {
@@ -182,7 +182,7 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
     };
 
     fetchChatSessions();
-  }, [isConnected, activeChatId, handleSelectChat]);
+  }, [isChatConnected, activeChatId, handleSelectChat]);
 
   // Listen for openChat events from chat button
   useEffect(() => {

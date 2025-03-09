@@ -14,8 +14,10 @@ interface UserContextType {
   user: User | null;
   setUser: (user: User | null) => void;
   loading: boolean;
-  socket: WebSocket | null;
-  isConnected: boolean;
+  chatSocket: WebSocket | null;
+  notificationSocket: WebSocket | null;
+  isChatConnected: boolean;
+  isNotificationConnected: boolean;
   refreshUserData: () => Promise<void>;
   logout: () => void;
 }
@@ -24,8 +26,10 @@ const UserContext = createContext<UserContextType>({
   user: null,
   setUser: () => {},
   loading: true,
-  socket: null,
-  isConnected: false,
+  chatSocket: null,
+  notificationSocket: null,
+  isChatConnected: false,
+  isNotificationConnected: false,
   refreshUserData: async () => {},
   logout: () => {},
 });
@@ -34,42 +38,83 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [chatSocket, setChatSocket] = useState<WebSocket | null>(null);
+  const [notificationSocket, setNotificationSocket] = useState<WebSocket | null>(null);
+  const [isChatConnected, setIsChatConnected] = useState(false);
+  const [isNotificationConnected, setIsNotificationConnected] = useState(false);
   const [authCounter, setAuthCounter] = useState(0); // Used to trigger auth checks
 
-  // Function to establish WebSocket connection
-  const connectWebSocket = useCallback((token: string) => {
-    if (socket?.readyState === WebSocket.OPEN) {
-      return; // Already connected
-    }
+  // Function to establish chat WebSocket connection
+  const connectChatWebSocket = useCallback(
+    (token: string) => {
+      if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+        return chatSocket; // Already connected
+      }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-    const apiHost = apiUrl.replace(/^https?:\/\//, "");
-    const protocol = apiUrl.startsWith("https") ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${apiHost}/ws/notifications/?token=${encodeURIComponent(token)}`;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+      const apiHost = apiUrl.replace(/^https?:\/\//, "");
+      const protocol = apiUrl.startsWith("https") ? "wss:" : "ws:";
+      const wsUrl = `${protocol}//${apiHost}/ws/chat/?token=${encodeURIComponent(token)}`;
 
-    const ws = new WebSocket(wsUrl);
+      const ws = new WebSocket(wsUrl);
 
-    ws.onopen = () => {
-      console.log("WebSocket connected");
-      setIsConnected(true);
-    };
+      ws.onopen = () => {
+        console.log("Chat WebSocket connected");
+        setIsChatConnected(true);
+      };
 
-    ws.onclose = () => {
-      console.log("WebSocket disconnected");
-      setIsConnected(false);
-      setSocket(null);
-    };
+      ws.onclose = () => {
+        console.log("Chat WebSocket disconnected");
+        setIsChatConnected(false);
+        setChatSocket(null);
+      };
 
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      setIsConnected(false);
-    };
+      ws.onerror = (error) => {
+        console.error("Chat WebSocket error:", error);
+        setIsChatConnected(false);
+      };
 
-    setSocket(ws);
-    return ws;
-  }, []); // Don't include socket in dependencies to avoid re-creation on each socket change
+      setChatSocket(ws);
+      return ws;
+    },
+    [chatSocket]
+  ); // Only include chatSocket in dependencies
+
+  // Function to establish notification WebSocket connection
+  const connectNotificationWebSocket = useCallback(
+    (token: string) => {
+      if (notificationSocket && notificationSocket.readyState === WebSocket.OPEN) {
+        return notificationSocket; // Already connected
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+      const apiHost = apiUrl.replace(/^https?:\/\//, "");
+      const protocol = apiUrl.startsWith("https") ? "wss:" : "ws:";
+      const wsUrl = `${protocol}//${apiHost}/ws/notifications/?token=${encodeURIComponent(token)}`;
+
+      const ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log("Notification WebSocket connected");
+        setIsNotificationConnected(true);
+      };
+
+      ws.onclose = () => {
+        console.log("Notification WebSocket disconnected");
+        setIsNotificationConnected(false);
+        setNotificationSocket(null);
+      };
+
+      ws.onerror = (error) => {
+        console.error("Notification WebSocket error:", error);
+        setIsNotificationConnected(false);
+      };
+
+      setNotificationSocket(ws);
+      return ws;
+    },
+    [notificationSocket]
+  ); // Only include notificationSocket in dependencies
 
   // Refresh user data from the server
   const refreshUserData = useCallback(async () => {
@@ -118,10 +163,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // Handle logout
   const logout = useCallback(() => {
-    // Close socket if open
-    if (socket) {
-      socket.close();
-      setSocket(null);
+    // Close sockets if open
+    if (chatSocket) {
+      chatSocket.close();
+      setChatSocket(null);
+    }
+
+    if (notificationSocket) {
+      notificationSocket.close();
+      setNotificationSocket(null);
     }
 
     // Clear local storage
@@ -130,7 +180,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     // Update state
     setUser(null);
-    setIsConnected(false);
+    setIsChatConnected(false);
+    setIsNotificationConnected(false);
 
     // Increment auth counter to trigger a re-check
     setAuthCounter((prev) => prev + 1);
@@ -139,7 +190,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (window.location.pathname !== "/") {
       router.push("/");
     }
-  }, [socket, router]);
+  }, [chatSocket, notificationSocket, router]);
 
   // Listen for storage events (for multi-tab support)
   useEffect(() => {
@@ -220,29 +271,57 @@ export function UserProvider({ children }: { children: ReactNode }) {
     // Cleanup function
     return () => {
       isMounted = false; // Prevent state updates after unmount
-      if (socket) {
-        socket.close();
-        setSocket(null);
+      if (chatSocket) {
+        chatSocket.close();
+        setChatSocket(null);
+      }
+      if (notificationSocket) {
+        notificationSocket.close();
+        setNotificationSocket(null);
       }
     };
-  }, [authCounter, router]); // Only depend on authCounter and router
+  }, [authCounter, router, chatSocket, notificationSocket]); // Include socket references for cleanup
 
-  // Handle WebSocket connection when user changes
+  // Handle WebSocket connections when user changes
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
 
-    if (user && token && !socket) {
-      connectWebSocket(token);
-    } else if (!user && socket) {
-      socket.close();
-      setSocket(null);
+    if (user && token) {
+      // Connect to chat socket if not already connected
+      if (!chatSocket) {
+        connectChatWebSocket(token);
+      }
+
+      // Connect to notification socket if not already connected
+      if (!notificationSocket) {
+        connectNotificationWebSocket(token);
+      }
+    } else if (!user) {
+      // Close chat socket if open
+      if (chatSocket) {
+        chatSocket.close();
+        setChatSocket(null);
+      }
+
+      // Close notification socket if open
+      if (notificationSocket) {
+        notificationSocket.close();
+        setNotificationSocket(null);
+      }
+
+      // Socket references have been removed
     }
 
-    // Return cleanup function
-    return () => {
-      // No cleanup needed here as we handle socket cleanup in the auth effect
-    };
-  }, [user, socket, connectWebSocket]);
+    // No return cleanup needed here as we handle socket cleanup in the auth effect
+  }, [
+    user,
+    chatSocket,
+    notificationSocket,
+    connectChatWebSocket,
+    connectNotificationWebSocket,
+    isChatConnected,
+    isNotificationConnected,
+  ]);
 
   return (
     <UserContext.Provider
@@ -250,8 +329,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
         user,
         setUser,
         loading,
-        socket,
-        isConnected,
+        chatSocket,
+        notificationSocket,
+        isChatConnected,
+        isNotificationConnected,
         refreshUserData,
         logout,
       }}>
