@@ -27,10 +27,8 @@ export function MemberCard({ member }: MemberCardProps) {
           <h3 className="text-xl font-semibold text-secondary pt-2">
             {member.firstName} {member.lastName}
           </h3>
-          <div className="flex gap-2 mb-4">
-            <p className="text-muted-foreground">@{member.username}</p>
-          </div>
-          <p className="text-sm text-muted-foreground line-clamp-3 text-center">{member.status}</p>
+
+          <p className="text-muted-foreground">@{member.username}</p>
         </CardContent>
       </Link>
       <CardFooter className="pb-4">

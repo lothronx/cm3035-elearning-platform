@@ -46,7 +46,7 @@ export function MemberDetails({ member }: MemberDetailsProps) {
 
             {/* Status */}
             <div className="w-full mt-3">
-              <p className="text-sm text-muted-foreground">{member.status}</p>
+              <p className="text-md text-muted-foreground">{member.status}</p>
             </div>
           </div>
 

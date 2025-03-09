@@ -75,7 +75,7 @@ export function Status({ initialStatus, onStatusUpdate }: StatusProps) {
     </div>
   ) : (
     <div className="flex items-center justify-center gap-2 sm:justify-start">
-      <p className="text-sm text-slate-600 dark:text-slate-300">{statusText}</p>
+      <p className="text-md text-slate-600 dark:text-slate-300">{statusText}</p>
       <Button
         variant="ghost"
         size="sm"
