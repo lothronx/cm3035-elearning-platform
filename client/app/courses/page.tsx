@@ -25,17 +25,28 @@ interface Course {
   is_completed: boolean | null;
 }
 
+/**
+ * CoursesPage component - Displays a list of all available courses
+ * Handles course enrollment and navigation to course details
+ * @returns {JSX.Element} - Rendered course list page
+ */
 export default function CoursesPage() {
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetch courses on component mount
   useEffect(() => {
     fetchCourses();
   }, []);
 
+  /**
+   * Fetches all courses from the API
+   * Handles authentication and error states
+   */
   const fetchCourses = async () => {
     try {
+      // Check user authentication status
       const isAuthenticated = await checkAuthStatus();
 
       if (!isAuthenticated) {
@@ -43,6 +54,7 @@ export default function CoursesPage() {
         return;
       }
 
+      // Fetch courses from API
       const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/courses/`);
       if (!response.ok) {
         throw new Error("Failed to fetch courses");
@@ -57,9 +69,13 @@ export default function CoursesPage() {
     }
   };
 
-  // Function to handle course enrollment
+  /**
+   * Handles course enrollment
+   * @param {number} courseId - ID of the course to enroll in
+   */
   const onEnroll = async (courseId: number) => {
     try {
+      // Check user authentication status
       const isAuthenticated = await checkAuthStatus();
 
       if (!isAuthenticated) {
@@ -67,8 +83,8 @@ export default function CoursesPage() {
         return;
       }
 
+      // Enroll in course and refresh course list
       await handleEnroll(courseId.toString());
-      // Refresh courses after enrollment
       await fetchCourses();
       toast.success("Successfully enrolled in course!");
     } catch (error) {
@@ -77,10 +93,12 @@ export default function CoursesPage() {
     }
   };
 
+  // Navigate to course details page
   const handleOpenCourse = (courseId: number) => {
     window.location.href = `/courses/${courseId}`;
   };
 
+  // Show loading spinner while data is being fetched
   if (loading) {
     return (
       <div className="min-h-screen bg-background dark:bg-slate-950">

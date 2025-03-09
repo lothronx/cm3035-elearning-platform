@@ -64,10 +64,18 @@ type FormErrors = {
   server?: string;
 };
 
+/**
+ * RegisterForm component handles new user registration
+ * @param {Object} props - Component props
+ * @param {Function} props.onRegisterSuccess - Callback for successful registration
+ * @param {Function} props.onLoginClick - Callback for login button click
+ */
 export function RegisterForm() {
+  // Get the router and user context
   const router = useRouter();
   const { refreshUserData } = useUser();
 
+  // State management for form inputs and error handling
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [formData, setFormData] = useState({
@@ -79,6 +87,7 @@ export function RegisterForm() {
     role: "student",
   });
 
+  // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -89,10 +98,12 @@ export function RegisterForm() {
     }
   };
 
+  // Handle radio button changes
   const handleRadioChange = (value: string) => {
     setFormData((prev) => ({ ...prev, role: value }));
   };
 
+  // Validate form data
   const validateForm = () => {
     try {
       registerSchema.parse(formData);
@@ -110,6 +121,7 @@ export function RegisterForm() {
     }
   };
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -205,10 +217,13 @@ export function RegisterForm() {
 
   return (
     <Card className="bg-background-light">
+      {/* title and description */}
       <CardHeader>
         <CardTitle className="text-2xl">Register</CardTitle>
         <CardDescription>Create an account to start learning</CardDescription>
       </CardHeader>
+
+      {/* form content */}
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           {errors.server && (
@@ -217,7 +232,9 @@ export function RegisterForm() {
             </div>
           )}
 
+          {/* form fields */}
           <div className="grid grid-cols-2 gap-4">
+            {/* first name */}
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
               <Input
@@ -230,6 +247,8 @@ export function RegisterForm() {
               />
               {errors.firstName && <p className="text-xs text-destructive">{errors.firstName}</p>}
             </div>
+
+            {/* last name */}
             <div className="space-y-2">
               <Label htmlFor="lastName">Last Name</Label>
               <Input
@@ -244,6 +263,7 @@ export function RegisterForm() {
             </div>
           </div>
 
+          {/* username */}
           <div className="space-y-2">
             <Label htmlFor="username">Username</Label>
             <Input
@@ -257,6 +277,7 @@ export function RegisterForm() {
             {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
           </div>
 
+          {/* password */}
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
@@ -271,6 +292,7 @@ export function RegisterForm() {
             {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
           </div>
 
+          {/* confirm password */}
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
             <Input
@@ -287,6 +309,7 @@ export function RegisterForm() {
             )}
           </div>
 
+          {/* role */}
           <div className="space-y-2">
             <Label>I am a</Label>
             <RadioGroup
@@ -305,6 +328,7 @@ export function RegisterForm() {
             {errors.role && <p className="text-xs text-destructive">{errors.role}</p>}
           </div>
 
+          {/* submit button */}
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Registering..." : "Register"}
           </Button>

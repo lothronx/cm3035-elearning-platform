@@ -11,18 +11,9 @@ import {
   createCourseFeedback,
   deleteCourseFeedback,
 } from "@/utils/course-feedback-utils";
-import { format } from "date-fns";
-import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { FeedbackCard } from "@/components/courses/feedback-card";
+import { FeedbackDeleteDialog } from "@/components/courses/feedback-delete-dialog";
 
 interface CourseFeedbackProps {
   courseId: string;
@@ -33,7 +24,6 @@ export function CourseFeedback({ courseId, isEnrolledStudents }: CourseFeedbackP
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [feedbackToDelete, setFeedbackToDelete] = useState<number | null>(null);
   const { user } = useUser();
 
@@ -67,12 +57,7 @@ export function CourseFeedback({ courseId, isEnrolledStudents }: CourseFeedbackP
     }
   };
 
-  const handleDeleteClick = (feedbackId: number) => {
-    setFeedbackToDelete(feedbackId);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDeleteFeedback = async () => {
+  const handleDeleteFeedback = async () => {
     if (!feedbackToDelete) return;
 
     try {
@@ -82,20 +67,22 @@ export function CourseFeedback({ courseId, isEnrolledStudents }: CourseFeedbackP
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete feedback");
     } finally {
-      setDeleteDialogOpen(false);
       setFeedbackToDelete(null);
     }
   };
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  const handleDeleteClick = (feedbackId: number) => {
+    setFeedbackToDelete(feedbackId);
   };
 
   return (
     <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
+      {/* title */}
       <CardHeader className="px-8">
         <CardTitle className="text-2xl font-bold text-secondary">Student Feedback</CardTitle>
       </CardHeader>
+
+      {/* input */}
       <CardContent className="px-8">
         {isEnrolledStudents && (
           <form onSubmit={handleSubmit} className="mb-6">
@@ -114,6 +101,7 @@ export function CourseFeedback({ courseId, isEnrolledStudents }: CourseFeedbackP
           </form>
         )}
 
+        {/* feedback cards */}
         {feedback.length === 0 ? (
           <p className="text-center text-muted-foreground">
             No feedback available for this course yet.
@@ -121,62 +109,23 @@ export function CourseFeedback({ courseId, isEnrolledStudents }: CourseFeedbackP
         ) : (
           <div className="space-y-4">
             {feedback.map((item) => (
-              <div
+              <FeedbackCard
                 key={item.id}
-                className="rounded-lg border p-4 transition-colors hover:bg-accent hover:text-accent-foreground">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-secondary text-secondary-foreground">
-                        {getInitials(item.student.first_name, item.student.last_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h4 className="font-medium">
-                        {item.student.first_name} {item.student.last_name}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Posted on {format(new Date(item.created_at), "MMM d, yyyy")}
-                      </p>
-                    </div>
-                  </div>
-                  {user?.id === item.student.id && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteClick(item.id)}
-                      className="h-8 w-8 hover:bg-background hover:text-destructive">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-                <div className="mt-4 pl-14">
-                  <p className="text-sm">{item.comment}</p>
-                </div>
-              </div>
+                item={item}
+                userId={user?.id}
+                onDelete={handleDeleteClick}
+              />
             ))}
           </div>
         )}
-
-        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete Feedback</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete this feedback? This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={confirmDeleteFeedback}>
-                Delete
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </CardContent>
+
+      {/* delete dialog */}
+      <FeedbackDeleteDialog
+        deleteDialogOpen={!!feedbackToDelete}
+        setDeleteDialogOpen={(open) => setFeedbackToDelete(open ? feedbackToDelete : null)}
+        confirmDeleteFeedback={handleDeleteFeedback}
+      />
     </Card>
   );
 }

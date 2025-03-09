@@ -8,31 +8,41 @@ import { MyCourses } from "@/components/dashboard/my-courses";
 import { useRouter } from "next/navigation";
 import { handleUnauthorized, fetchWithAuth, checkAuthStatus } from "@/lib/auth";
 
+/**
+ * Dashboard component - Main dashboard page displaying user information and courses
+ * @returns {JSX.Element} The dashboard UI with personal details and course management sections
+ */
 export default function Dashboard() {
   const router = useRouter();
 
+  // State for storing user data
   const [userData, setUserData] = useState({
-    firstName: "",
-    lastName: "",
-    username: "",
-    role: "",
-    photo: "",
-    status: "",
-    courses: [],
+    firstName: "", // User's first name
+    lastName: "", // User's last name
+    username: "", // User's username
+    role: "", // User's role (e.g., student, instructor)
+    photo: "", // URL of user's profile photo
+    status: "", // User's status message
+    courses: [], // Array of courses the user is enrolled in
   });
 
+  // Fetch user data on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Check if user is authenticated
         const isAuthenticated = await checkAuthStatus();
 
         if (!isAuthenticated) {
           handleUnauthorized(router);
           return;
         }
+
+        // Fetch dashboard data from API
         const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/`);
         const data = await response.json();
 
+        // Update state with fetched data
         setUserData({
           firstName: data.first_name,
           lastName: data.last_name,
@@ -42,7 +52,6 @@ export default function Dashboard() {
           status: data.status,
           courses: data.courses,
         });
-        console.log(data);
       } catch (error) {
         console.error(error);
       }
@@ -51,6 +60,10 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
+  /**
+   * Updates the user's status
+   * @param {string} newStatus - The new status message
+   */
   const updateStatus = async (newStatus: string) => {
     try {
       const isAuthenticated = await checkAuthStatus();
@@ -58,6 +71,7 @@ export default function Dashboard() {
       if (!isAuthenticated) {
         handleUnauthorized(router);
       } else {
+        // Send PATCH request to update status
         const response = await fetchWithAuth(
           `${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/patch-status/`,
           {
@@ -70,6 +84,7 @@ export default function Dashboard() {
         );
         const data = await response.json();
 
+        // Update local state with new status
         setUserData((prev) => ({ ...prev, status: data.status }));
       }
     } catch (error) {
@@ -78,6 +93,10 @@ export default function Dashboard() {
     }
   };
 
+  /**
+   * Updates the user's profile photo
+   * @param {File} file - The new profile photo file
+   */
   const updatePhoto = async (file: File): Promise<void> => {
     try {
       const isAuthenticated = await checkAuthStatus();
@@ -87,9 +106,11 @@ export default function Dashboard() {
         return;
       }
 
+      // Prepare form data for file upload
       const formData = new FormData();
       formData.append("photo", file);
 
+      // Send PATCH request to update photo
       const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/patch-photo/`,
         {
@@ -102,6 +123,7 @@ export default function Dashboard() {
         throw new Error("Failed to upload image");
       }
 
+      // Update local state with new photo URL
       const data = await response.json();
       setUserData((prev) => ({ ...prev, photo: data.photo }));
     } catch (error) {
@@ -110,6 +132,10 @@ export default function Dashboard() {
     }
   };
 
+  /**
+   * Creates a new course
+   * @param {Object} data - Course data containing title and description
+   */
   const createCourse = async (data: { title: string; description: string }): Promise<void> => {
     try {
       const isAuthenticated = await checkAuthStatus();
@@ -119,6 +145,7 @@ export default function Dashboard() {
         return;
       }
 
+      // Send POST request to create new course
       const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/courses/`, {
         method: "POST",
         headers: {
@@ -135,7 +162,7 @@ export default function Dashboard() {
         throw new Error(errorData.detail || "Failed to create course");
       }
 
-      // Fetch updated course list
+      // Fetch updated course list after successful creation
       const dashboardResponse = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/`
       );
@@ -145,7 +172,7 @@ export default function Dashboard() {
       toast.success("Course created successfully");
     } catch (error) {
       console.error("Error creating course:", error);
-      throw error;
+      toast.error("Failed to create course. Please try again.");
     }
   };
 
@@ -171,8 +198,6 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
-
-      {/* Chat Box */}
     </div>
   );
 }

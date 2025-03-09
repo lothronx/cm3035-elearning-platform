@@ -16,6 +16,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+/**
+ * SearchResult type represents the structure of search results
+ */
 type SearchResult = {
   members: Array<{
     id: number;
@@ -32,8 +35,16 @@ type SearchResult = {
   }>;
 };
 
+/**
+ * SearchBar component provides global search functionality
+ * @param {Object} props - Component props
+ * @param {string} props.userRole - User role
+ */
 export function SearchBar({ userRole }: { userRole: string | null }) {
+  // Get the router instance
   const router = useRouter();
+
+  // State management for search query and results
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
   const [results, setResults] = React.useState<SearchResult>({
@@ -42,6 +53,10 @@ export function SearchBar({ userRole }: { userRole: string | null }) {
   });
   const [isLoading, setIsLoading] = React.useState(false);
 
+  /**
+   * handleSearch function performs the search operation
+   * @param {string} search - Search query
+   */
   const handleSearch = React.useCallback(
     async (search: string) => {
       if (!search.trim()) {
@@ -52,15 +67,15 @@ export function SearchBar({ userRole }: { userRole: string | null }) {
       setIsLoading(true);
 
       try {
+        let membersData = [];
+        let coursesData = [];
+
         // Always search courses
         const coursesPromise = fetchWithAuth(
           `${process.env.NEXT_PUBLIC_API_URL}/api/courses/search/?q=${encodeURIComponent(search)}`
         );
 
         // Only search members if user is a teacher
-        let membersData = [];
-        let coursesData = [];
-
         if (userRole == "teacher") {
           const [membersResponse, coursesResponse] = await Promise.all([
             fetchWithAuth(
@@ -71,10 +86,12 @@ export function SearchBar({ userRole }: { userRole: string | null }) {
             coursesPromise,
           ]);
 
+          // Validate responses
           if (!membersResponse.ok || !coursesResponse.ok) {
             throw new Error("Search failed");
           }
 
+          // Get search results
           [membersData, coursesData] = await Promise.all([
             membersResponse.json(),
             coursesResponse.json(),
@@ -122,6 +139,7 @@ export function SearchBar({ userRole }: { userRole: string | null }) {
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-80 p-0">
+          {/* Search Input */}
           <Command shouldFilter={false}>
             <CommandInput
               placeholder="Search here..."
@@ -131,6 +149,8 @@ export function SearchBar({ userRole }: { userRole: string | null }) {
             />
             <CommandList>
               <CommandEmpty>{isLoading ? "Searching..." : "No results found."}</CommandEmpty>
+
+              {/* Members */}
               {userRole == "teacher" && results.members.length > 0 && (
                 <CommandGroup heading="Members">
                   {results.members.map((member) => (
@@ -155,6 +175,8 @@ export function SearchBar({ userRole }: { userRole: string | null }) {
                   ))}
                 </CommandGroup>
               )}
+
+              {/* Courses */}
               {results.courses.length > 0 && (
                 <CommandGroup heading="Courses">
                   {results.courses.map((course) => (

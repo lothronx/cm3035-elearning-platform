@@ -1,5 +1,4 @@
 import { fetchWithAuth } from "@/lib/auth";
-import { toast } from "sonner";
 
 export interface CourseEnrollment {
   id: number;
@@ -47,7 +46,6 @@ export const deleteEnrollments = async (courseId: string, studentIds: number[]) 
     }
 
     const result = await response.json();
-    toast.success(`Successfully removed ${result.deleted_count} student(s)`);
     return result;
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "Failed to remove enrollments");

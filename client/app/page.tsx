@@ -7,10 +7,17 @@ import { LoginForm } from "@/components/welcome/login-form";
 import { RegisterForm } from "@/components/welcome/register-form";
 import { checkAuthStatus } from "@/lib/auth";
 
+/**
+ * WelcomePage component - The landing page with login/register forms
+ * @returns {JSX.Element} The welcome page UI with auth forms and welcome message
+ */
 export default function WelcomePage() {
   const router = useRouter();
+
+  // State to toggle between login and register forms
   const [isLogin, setIsLogin] = useState(true);
 
+  // Check authentication status on mount
   useEffect(() => {
     const checkAuth = async () => {
       const isAuthenticated = await checkAuthStatus();
@@ -26,7 +33,7 @@ export default function WelcomePage() {
     <div className="flex min-h-screen flex-col md:flex-row">
       <Toaster position="bottom-right" />
 
-      {/* Welcome section */}
+      {/* Welcome message section */}
       <div className="flex flex-1 items-center justify-center bg-primary p-8 text-primary-foreground">
         <div className="max-w-md space-y-6">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
@@ -39,7 +46,7 @@ export default function WelcomePage() {
         </div>
       </div>
 
-      {/* Auth section */}
+      {/* Authentication forms section */}
       <div className="flex flex-1 items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
           {isLogin ? (

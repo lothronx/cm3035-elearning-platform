@@ -1,5 +1,4 @@
 import { fetchWithAuth } from "@/lib/auth";
-import { toast } from "sonner";
 
 export interface FeedbackStudent {
   id: number;
@@ -48,7 +47,6 @@ export const createCourseFeedback = async (courseId: string, comment: string) =>
     }
 
     const result = await response.json();
-    toast.success("Feedback posted successfully");
     return result;
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "Failed to post feedback");
@@ -68,7 +66,6 @@ export const deleteCourseFeedback = async (courseId: string, feedbackId: number)
       throw new Error("Failed to delete feedback");
     }
 
-    toast.success("Feedback deleted successfully");
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "Failed to delete feedback");
   }

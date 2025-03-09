@@ -1,5 +1,4 @@
 import { fetchWithAuth } from "@/lib/auth";
-import { toast } from "sonner";
 
 interface Course {
   id: number;
@@ -96,7 +95,6 @@ export const handleActivationToggle = async (courseId: string) => {
     }
 
     const result = await response.json();
-    toast.success(result.message);
     return result;
   } catch (error) {
     throw error;
@@ -125,7 +123,6 @@ export const handleEdit = async (
     }
 
     const result = await response.json();
-    toast.success("Course updated successfully");
     return result;
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "Failed to update course");

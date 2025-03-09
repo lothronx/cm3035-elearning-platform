@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CourseMaterial, fetchCourseMaterials } from "@/utils/course-material-utils";
-import {MaterialCard} from "./material-card";
-import {MaterialUploadDialog} from "./material-upload-dialog";
+import { MaterialCard } from "../../../components/courses/material-card";
+import { MaterialUploadDialog } from "../../../components/courses/material-upload-dialog";
 
 interface CourseMaterialsProps {
   courseId: string;
@@ -31,6 +31,8 @@ export function CourseMaterials({ courseId, isCourseTeacher }: CourseMaterialsPr
 
   return (
     <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
+
+      {/* title and upload button */}
       <CardHeader className="px-8">
         <div className="flex items-center justify-between">
           <CardTitle className="text-2xl font-bold text-secondary">Course Materials</CardTitle>
@@ -39,7 +41,9 @@ export function CourseMaterials({ courseId, isCourseTeacher }: CourseMaterialsPr
           )}
         </div>
       </CardHeader>
+
       <CardContent className="px-8">
+        {/* materials list */}
         <ScrollArea className="h-[400px] pr-4">
           {materials.length === 0 ? (
             <p className="text-center text-muted-foreground">No materials available</p>

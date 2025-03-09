@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useUser } from "@/contexts/user-context";
 import { SearchBar } from "@/components/navbar/search-bar";
 import { NotificationMenu } from "@/components/navbar/notification";
-import { ChatBox } from "@/components/navbar/chat-box";
+import { ChatBox } from "@/components/chat/chat-box";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -55,7 +55,7 @@ export function Navbar() {
         <div className="flex items-center gap-6">
           <h1 className="text-2xl font-bold text-secondary">E-Learning</h1>
 
-          {/* Desktop Navigation */}
+          {/* Navigation */}
           <div className="hidden md:block">
             <Button
               variant="ghost"

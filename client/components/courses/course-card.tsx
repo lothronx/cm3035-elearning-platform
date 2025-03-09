@@ -24,7 +24,7 @@ interface CourseCardProps {
 }
 
 export function CourseCard({ course, onEnroll, onOpenCourse }: CourseCardProps) {
-  // Function to format date
+  // Format date string to a more readable format
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat("en-US", {
@@ -38,6 +38,7 @@ export function CourseCard({ course, onEnroll, onOpenCourse }: CourseCardProps) 
     <Card
       onClick={() => onOpenCourse(course.id)}
       className="flex flex-col h-full bg-background-light transition-all duration-300 hover:bg-primary/10 hover:shadow-md">
+      {/* Course header with title and teacher */}
       <CardHeader className="flex flex-row items-start gap-4">
         <div className="bg-primary text-primary-foreground p-3 rounded-full">
           <BookOpen className="h-6 w-6" />
@@ -49,6 +50,8 @@ export function CourseCard({ course, onEnroll, onOpenCourse }: CourseCardProps) 
           </p>
         </div>
       </CardHeader>
+
+      {/* Course content with description and metadata */}
       <CardContent className="flex-grow">
         <p className="text-muted-foreground">{course.description}</p>
         <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground ">
@@ -60,6 +63,8 @@ export function CourseCard({ course, onEnroll, onOpenCourse }: CourseCardProps) 
           <span>{course.enrolled_students_count.toLocaleString()} students</span>
         </div>
       </CardContent>
+
+      {/* Course footer with enroll button */}
       {course.is_enrolled !== null && (
         <CardFooter>
           <Button

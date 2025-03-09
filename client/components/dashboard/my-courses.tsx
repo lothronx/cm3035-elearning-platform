@@ -47,6 +47,8 @@ export function MyCourses({ courses, onCreateCourse }: MyCoursesProps) {
     <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 ">
       <CardHeader className="pb-2 flex flex-row justify-between items-center">
         <CardTitle className="text-2xl font-medium text-secondary">{title}</CardTitle>
+
+        {/* create course button */}
         {isTeacher && courses.length > 0 && (
           <Button
             variant="outline"
@@ -69,6 +71,7 @@ export function MyCourses({ courses, onCreateCourse }: MyCoursesProps) {
         )}
       </CardContent>
 
+      {/* create course dialog */}
       <CourseFormDialog
         isOpen={isModalOpen}
         onOpenChange={setIsModalOpen}

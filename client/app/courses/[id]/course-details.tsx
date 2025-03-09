@@ -2,22 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Edit, AlertTriangle, Calendar, Clock } from "lucide-react";
-import { Toaster, toast } from "sonner";
+import { Edit, Calendar, Clock } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { CourseFormDialog } from "@/components/courses/course-form-dialog";
+import { CourseActivationDialog } from "@/components/courses/course-activation-dialog";
 import {
   fetchCourse,
   handleActivationToggle,
@@ -56,7 +48,6 @@ export default function CourseDetails({
 }: CourseDetailsProps) {
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
-  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string>();
@@ -118,7 +109,6 @@ export default function CourseDetails({
       setCourse((prevCourse) =>
         prevCourse ? { ...prevCourse, is_active: result.is_active } : null
       );
-      setDeactivateDialogOpen(false);
     } catch (error) {
       console.error("Error updating course status:", error);
       toast.error("Failed to update course status");
@@ -155,8 +145,8 @@ export default function CourseDetails({
 
   return (
     <>
-      <Toaster position="bottom-right" />
       <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
+        {/* title and description */}
         <CardHeader className="px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
@@ -173,6 +163,8 @@ export default function CourseDetails({
               </p>
             </div>
             <div className="flex items-center gap-2 self-start">
+
+              {/* Enrollment/Leave button, Completion button */}
               {isStudent && (
                 <div className="flex gap-2">
                   <Button
@@ -192,75 +184,47 @@ export default function CourseDetails({
                 </div>
               )}
 
+              {/* Edit and activation buttons */}
               {isCourseTeacher && (
                 <>
                   <Button variant="secondary" onClick={() => setEditDialogOpen(true)} size="sm">
                     <Edit className="mr-2 h-4 w-4" />
                     Edit
                   </Button>
-                  <Dialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant={course.is_active ? "destructive" : "default"} size="sm">
-                        <AlertTriangle className="mr-2 h-4 w-4" />
-                        {course.is_active ? "Archive" : "Activate"}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>
-                          {course.is_active ? "Archive" : "Activate"} Course
-                        </DialogTitle>
-                        <DialogDescription>
-                          {course.is_active
-                            ? "Are you sure you want to archive this course? Other people will no longer be able to access it."
-                            : "Are you sure you want to activate this course? Other people will be able to access it."}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeactivateDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button
-                          variant={course.is_active ? "destructive" : "default"}
-                          onClick={onActivationToggle}>
-                          {course.is_active ? "Archive" : "Activate"}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  <CourseActivationDialog course={course} onActivationToggle={onActivationToggle} />
                 </>
               )}
             </div>
           </div>
         </CardHeader>
+
+        {/* course metadata */}
         <CardContent className="px-8">
-          <div className="space-y-4">
-            <p className="text-muted-foreground">{course.description}</p>
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center">
-                <Calendar className="mr-2 h-4 w-4" />
-                Created {formattedCreatedAt}
-              </div>
-              <div className="flex items-center">
-                <Clock className="mr-2 h-4 w-4" />
-                Last updated {formattedUpdatedAt}
-              </div>
+          <p className="text-muted-foreground">{course.description}</p>
+          <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span>Created {formattedCreatedAt}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>Last updated {formattedUpdatedAt}</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Edit dialog */}
       <CourseFormDialog
         isOpen={editDialogOpen}
         onOpenChange={setEditDialogOpen}
-        onSubmit={onEdit}
-        isSubmitting={isSubmitting}
-        error={formError}
         initialData={{
           title: course.title,
           description: course.description,
         }}
-        mode="edit"
+        onSubmit={onEdit}
+        isSubmitting={isSubmitting}
+        error={formError}
       />
     </>
   );

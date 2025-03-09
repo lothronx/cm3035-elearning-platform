@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from courses.models import Enrollment
 from courses.serializers import EnrollmentSerializer
 from api.permissions import IsEnrolledStudent
+from django.utils import timezone
 
 
 class StudentCourseProgressViewSet(viewsets.ViewSet):
@@ -20,9 +21,7 @@ class StudentCourseProgressViewSet(viewsets.ViewSet):
     def get_queryset(self):
         """Return enrollments for the current student and specified course"""
         course_pk = self.kwargs.get("course_pk")
-        return Enrollment.objects.filter(
-            course_id=course_pk, student=self.request.user
-        )
+        return Enrollment.objects.filter(course_id=course_pk, student=self.request.user)
 
     @action(detail=False, methods=["patch"])
     def toggle_completion(self, request, course_pk=None):
@@ -33,6 +32,10 @@ class StudentCourseProgressViewSet(viewsets.ViewSet):
             )
 
             enrollment.is_completed = not enrollment.is_completed
+            if enrollment.is_completed:
+                enrollment.completed_at = timezone.now()
+            else:
+                enrollment.completed_at = None
             enrollment.save()
 
             serializer = self.serializer_class(enrollment)

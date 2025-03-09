@@ -26,7 +26,13 @@ type Notification = {
 // Initial notifications - will be replaced with real data from API
 const initialNotifications: Notification[] = [];
 
+/**
+ * NotificationMenu component handles notification display and interactions
+ * @param {Object} props - Component props
+ * @param {Function} props.onNotificationClick - Callback when notification is clicked
+ */
 export function NotificationMenu() {
+  // State management for notifications and connection status
   const [notifications, setNotifications] = React.useState<Notification[]>(initialNotifications);
   const { notificationSocket, isNotificationConnected } = useUser();
 

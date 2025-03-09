@@ -10,6 +10,8 @@ interface ChatSidebarProps {
   onSelectChat: (chatId: number) => void;
 }
 
+// the chat sidebar component is responsible for rendering the list of chat sessions
+// it also handles the selection of a chat session
 export default function ChatSidebar({ contacts, activeChatId, onSelectChat }: ChatSidebarProps) {
   return (
     <div className="flex-1/3 border-r">

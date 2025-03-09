@@ -37,6 +37,8 @@ interface ChatWindowProps {
   onSendMessage: (content: string, file?: globalThis.File) => void;
 }
 
+// the chat window component is responsible for rendering the chat messages
+// it also handles the sending of new messages
 export default function ChatWindow({ chat, onSendMessage }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

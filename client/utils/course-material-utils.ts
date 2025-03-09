@@ -1,5 +1,4 @@
 import { fetchWithAuth } from "@/lib/auth";
-import { toast } from "sonner";
 
 export interface CourseMaterial {
   id: number;
@@ -39,7 +38,6 @@ export const uploadCourseMaterial = async (courseId: string, formData: FormData)
     }
 
     const result = await response.json();
-    toast.success("Material uploaded successfully");
     return result;
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "Failed to upload material");
@@ -59,7 +57,6 @@ export const deleteCourseMaterial = async (courseId: string, materialId: number)
       throw new Error("Failed to delete material");
     }
 
-    toast.success("Material deleted successfully");
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "Failed to delete material");
   }

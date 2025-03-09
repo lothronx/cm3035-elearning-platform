@@ -11,7 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUser } from "@/contexts/user-context";
 
+/**
+ * LoginForm component handles user authentication
+ * @param {Object} props - Component props
+ * @param {Function} props.onLoginSuccess - Callback for successful login
+ * @param {Function} props.onSignupClick - Callback for signup button click
+ */
 export function LoginForm() {
+  // State management for form inputs and error handling
   const router = useRouter();
   const { refreshUserData } = useUser();
   const [isLoading, setIsLoading] = useState(false);
@@ -61,12 +68,16 @@ export function LoginForm() {
 
   return (
     <Card className="bg-background-light">
+      {/* title and description */}
       <CardHeader>
         <CardTitle className="text-2xl text-primary">Login</CardTitle>
         <CardDescription>Enter your credentials to access your account</CardDescription>
       </CardHeader>
+
+      {/* form */}
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* username */}
           <div className="space-y-2">
             <Label htmlFor="username">Username</Label>
             <Input
@@ -78,6 +89,7 @@ export function LoginForm() {
               required
             />
           </div>
+          {/* password */}
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
@@ -90,6 +102,7 @@ export function LoginForm() {
               required
             />
           </div>
+          {/* submit button */}
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Logging in..." : "Login"}
           </Button>

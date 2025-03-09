@@ -13,6 +13,7 @@ interface ChatInterfaceProps {
   handleSendMessage: (content: string, file?: globalThis.File) => void;
 }
 
+// the chat interface component is responsible for rendering the chat sidebar and chat window
 export function ChatInterface({
   contacts,
   activeChatId,
