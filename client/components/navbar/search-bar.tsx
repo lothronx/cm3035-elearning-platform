@@ -61,7 +61,7 @@ export function SearchBar({ userRole }: { userRole: string | null }) {
         let membersData = [];
         let coursesData = [];
 
-        if (userRole === "teacher") {
+        if (userRole == "teacher") {
           const [membersResponse, coursesResponse] = await Promise.all([
             fetchWithAuth(
               `${process.env.NEXT_PUBLIC_API_URL}/api/members/search/?q=${encodeURIComponent(
@@ -131,7 +131,7 @@ export function SearchBar({ userRole }: { userRole: string | null }) {
             />
             <CommandList>
               <CommandEmpty>{isLoading ? "Searching..." : "No results found."}</CommandEmpty>
-              {userRole === "teacher" && results.members.length > 0 && (
+              {userRole == "teacher" && results.members.length > 0 && (
                 <CommandGroup heading="Members">
                   {results.members.map((member) => (
                     <CommandItem
@@ -148,7 +148,7 @@ export function SearchBar({ userRole }: { userRole: string | null }) {
                         </p>
                         <p className="text-sm text-muted-foreground">@{member.username}</p>
                       </div>
-                      <Badge variant={member.role === "teacher" ? "default" : "secondary"}>
+                      <Badge variant={member.role == "teacher" ? "default" : "secondary"}>
                         {member.role}
                       </Badge>
                     </CommandItem>

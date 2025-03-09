@@ -51,6 +51,7 @@ class DashboardViewSet(viewsets.ViewSet):
                 "id": user.id,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
+                "username": user.username,
                 "role": user.role,
                 "photo": (
                     request.build_absolute_uri(user.photo.url) if user.photo else None

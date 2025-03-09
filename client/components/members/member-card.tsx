@@ -23,7 +23,7 @@ export function MemberCard({ member }: MemberCardProps) {
               className="object-cover"
             />
           </div>
-          <Badge variant={member.role === "teacher" ? "default" : "secondary"}>{member.role}</Badge>
+          <Badge variant={member.role == "teacher" ? "default" : "secondary"}>{member.role}</Badge>
           <h3 className="text-xl font-semibold text-secondary pt-2">
             {member.firstName} {member.lastName}
           </h3>

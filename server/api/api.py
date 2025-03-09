@@ -54,7 +54,7 @@ courses_router.register(
 )
 
 # Chat routes
-router.register(r"messages", ChatMessageViewSet, basename="messages")
+router.register(r"chat", ChatMessageViewSet, basename="chat")
 router.register(r"uploads", FileUploadViewSet, basename="uploads")
 
 # Notification routes

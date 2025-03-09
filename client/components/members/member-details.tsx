@@ -34,7 +34,7 @@ export function MemberDetails({ member }: MemberDetailsProps) {
               <h3 className="text-2xl font-medium tracking-tight text-secondary">
                 {member.firstName} {member.lastName}
               </h3>
-              <Badge variant={member.role === "teacher" ? "default" : "secondary"}>
+              <Badge variant={member.role == "teacher" ? "default" : "secondary"}>
                 {member.role}
               </Badge>
             </div>
@@ -52,10 +52,7 @@ export function MemberDetails({ member }: MemberDetailsProps) {
 
           {/* Chat Button - Right Side */}
           <div className="flex items-center">
-            <ChatButton
-              userId={member.id}
-              username={`${member.firstName} ${member.lastName}`}
-            />
+            <ChatButton userId={member.id} username={`${member.firstName} ${member.lastName}`} />
           </div>
         </div>
       </CardContent>

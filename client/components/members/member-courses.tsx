@@ -9,7 +9,7 @@ export interface MemberCoursesProps {
   userRole: string;
 }
 export function MemberCourses({ courses, userRole }: MemberCoursesProps) {
-  const title = userRole === "teacher" ? "Teaching" : "Enrolled";
+  const title = userRole == "teacher" ? "Teaching" : "Enrolled";
 
   return (
     <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">

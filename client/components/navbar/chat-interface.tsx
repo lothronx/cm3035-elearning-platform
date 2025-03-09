@@ -8,29 +8,7 @@ import ChatWindow from "@/components/navbar/chat-window";
 import { useUser } from "@/contexts/user-context";
 import { fetchWithAuth } from "@/lib/auth";
 import { toast } from "sonner";
-
-// Define types for our chat data
-export type Message = {
-  id: string;
-  content: string;
-  sender: string;
-  sender_id?: string;
-  timestamp: Date;
-  isFile?: boolean;
-  fileName?: string;
-  fileUrl?: string;
-  message_type?: string;
-};
-
-export type ChatSession = {
-  id: string;
-  name: string;
-  avatar?: string;
-  lastMessage: string;
-  unreadCount: number;
-  messages: Message[];
-  user_id?: string;
-};
+import { ChatSession, Message } from "@/types/message";
 
 interface ChatInterfaceProps {
   chatSessions: ChatSession[];
@@ -46,7 +24,6 @@ export function ChatInterface({
   const [activeChatId, setActiveChatId] = useState<string>(
     chatSessions.length > 0 ? chatSessions[0].id : ""
   );
-  const [showSidebar, setShowSidebar] = useState(true);
   const [, setIsLoading] = useState(false);
   const { socket, user } = useUser();
 
@@ -64,7 +41,7 @@ export function ChatInterface({
     }
   }, [chatSessions, activeChatId, activeChat, fetchMessages]);
 
-  const handleSendMessage = async (content: string, file?: File) => {
+  const handleSendMessage = async (content: string, file?: globalThis.File) => {
     if (!content && !file) return;
     if (!activeChatId || !user) {
       toast.error("Unable to send message");
@@ -81,10 +58,11 @@ export function ChatInterface({
         content: content,
         sender: "me",
         sender_id: user.id ? user.id.toString() : "",
+        receiver: activeChat?.name || "", // Use active chat name as receiver name
+        receiver_id: parseInt(activeChat?.id || "0"), // Use active chat id as receiver_id
         timestamp: new Date(),
-        message_type: file ? "file" : "text",
-        isFile: !!file,
-        fileName: file?.name,
+        files: [], // Initialize empty array for files
+        is_read: true, // Our own messages are always marked as read
       };
 
       // Update UI immediately for better UX
@@ -199,22 +177,13 @@ export function ChatInterface({
       </div>
 
       <div className="flex h-[calc(100%-48px)] overflow-hidden">
-        {showSidebar && (
-          <ChatSidebar
-            chatSessions={chatSessions}
-            activeChatId={activeChatId}
-            onSelectChat={handleSelectChat}
-          />
-        )}
+        <ChatSidebar
+          chatSessions={chatSessions}
+          activeChatId={activeChatId}
+          onSelectChat={handleSelectChat}
+        />
 
-        {!showSidebar && activeChat && (
-          <ChatWindow
-            chat={activeChat}
-            onSendMessage={handleSendMessage}
-            onToggleSidebar={() => setShowSidebar(!showSidebar)}
-            showBackButton={!showSidebar}
-          />
-        )}
+        {activeChat && <ChatWindow chat={activeChat} onSendMessage={handleSendMessage} />}
       </div>
     </div>
   );

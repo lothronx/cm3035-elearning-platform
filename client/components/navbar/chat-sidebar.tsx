@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChatSession } from "./chat-interface";
+import { ChatSession } from "@/types/message";
 import { cn } from "@/lib/utils";
 import { BadgeMini } from "@/components/ui/badge-mini";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,9 +20,9 @@ export default function ChatSidebar({
     <div className="w-full border-r md:w-64">
       <ScrollArea className="h-full">
         <div className="p-1">
-          {chatSessions.map((chat) => (
+          {chatSessions.map((chat, index) => (
             <div
-              key={chat.id}
+              key={`chat-${chat.id}-${index}`}
               className={cn(
                 "flex cursor-pointer items-center gap-2 rounded-sm p-2 m-1 transition-colors hover:bg-primary/10 text-sm",
                 chat.id === activeChatId && "bg-primary/10"

@@ -10,29 +10,9 @@ import { useUser } from "@/contexts/user-context";
 import { toast } from "sonner";
 import { fetchWithAuth } from "@/lib/auth";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Message, ChatSession } from "@/types/message";
 
-// Types
-export type Message = {
-  id: string;
-  content: string;
-  sender: string;
-  sender_id?: string;
-  timestamp: Date;
-  isFile?: boolean;
-  fileName?: string;
-  fileUrl?: string;
-  message_type?: string;
-};
-
-export type ChatSession = {
-  id: string;
-  name: string;
-  avatar?: string;
-  lastMessage: string;
-  unreadCount: number;
-  messages: Message[];
-  user_id?: string;
-};
+// Using Message and ChatSession types imported from types/message.ts
 
 // Empty initial chat sessions - will be populated from API
 const initialChatSessions: ChatSession[] = [];
@@ -52,28 +32,23 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
   // Function to fetch chat sessions from the API
   const fetchChatSessions = useCallback(async () => {
     try {
-      const response = await fetchWithAuth(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/chat/recent-chats/`
-      );
+      const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/contacts/`);
       if (response.ok) {
         const data = await response.json();
 
         // Transform API data to our chat session format
         const formattedSessions = data.map(
           (item: {
-            user_id: string;
-            username: string;
-            avatar: string | null;
-            last_message: string;
-            unread_count: number;
+            id: string;
+            name: string;
+            lastMessage: string;
+            unreadCount: number;
           }) => ({
-            id: item.user_id,
-            name: item.username,
-            avatar: item.avatar || "/placeholder.svg?height=40&width=40",
-            lastMessage: item.last_message,
-            unreadCount: item.unread_count,
+            id: item.id,
+            name: item.name,
+            lastMessage: item.lastMessage,
+            unreadCount: item.unreadCount,
             messages: [],
-            user_id: item.user_id,
           })
         );
 
@@ -93,36 +68,56 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
   // Fetch messages for a specific chat session
   const fetchMessages = useCallback(
     async (userId: string) => {
+      // Validate userId to prevent "undefined" being sent to the API
+      // if (!userId || userId === "undefined") {
+      //   console.error("Invalid user ID for fetchMessages:", userId);
+      //   return;
+      // }
+
       try {
         const response = await fetchWithAuth(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/chat/messages/${userId}/`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/chat/history/3/`
         );
 
         if (response.ok) {
           const data = await response.json();
 
           // Transform API data to our message format
+          console.log("Current user ID:", user?.id, "Type:", typeof user?.id);
+
           const formattedMessages = data.map(
             (item: {
               id: number;
               content: string;
-              sender_id: string;
-              sender_name: string;
-              message_type: string;
+              sender_id: number;
+              sender: string;
+              receiver_id: number;
+              receiver: string;
               timestamp: string;
-              file_url?: string;
-              file_name?: string;
-            }) => ({
-              id: item.id.toString(),
-              content: item.content,
-              sender: item.sender_id === user?.id?.toString() ? "me" : item.sender_name,
-              sender_id: item.sender_id,
-              timestamp: new Date(item.timestamp),
-              message_type: item.message_type,
-              isFile: item.message_type === "file",
-              fileName: item.file_name,
-              fileUrl: item.file_url,
-            })
+              files: Array<{
+                id: number;
+                title: string;
+                url: string;
+              }>;
+            }) => {
+              console.log("Message sender_id:", item.sender_id, "Type:", typeof item.sender_id);
+              console.log("Current user ID:", user?.id, "Type:", typeof user?.id);
+              console.log("Comparison result:", item.sender_id === user?.id);
+              
+              // Check if the message is from the current user
+              const isFromMe = item.sender_id === user?.id;
+              
+              return {
+                id: item.id.toString(),
+                content: item.content,
+                sender: isFromMe ? "me" : item.sender,
+                sender_id: item.sender_id.toString(),
+                receiver: item.receiver,
+                receiver_id: item.receiver_id,
+                timestamp: new Date(item.timestamp),
+                files: item.files || [],
+              };
+            }
           );
 
           // Update the specified chat session with messages
@@ -162,16 +157,22 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
       // Fetch chat sessions if needed
       if (chatSessions.length === 0) {
         fetchChatSessions().then(() => {
-          // After fetching chat sessions, find the one with the requested user and load its messages
-          const targetSession = chatSessions.find((session) => session.id === userId);
-          if (targetSession) {
-            fetchMessages(userId);
-          }
+          // We need to get the latest chat sessions after they've been fetched
+          // This requires us to use a function with setChatSessions to get the latest state
+          setChatSessions((latestChatSessions) => {
+            // Now find the session with the current user ID
+            const targetSession = latestChatSessions.find((session) => session.id === userId);
+            if (targetSession && userId) {
+              fetchMessages(userId);
+            }
+            // Return the state unchanged - we're just using this to access latest state
+            return latestChatSessions;
+          });
         });
       } else {
         // Check if we already have a session with this user
         const targetSession = chatSessions.find((session) => session.id === userId);
-        if (targetSession) {
+        if (targetSession && userId) {
           fetchMessages(userId);
         }
       }
@@ -203,6 +204,7 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
           const message = data.message;
           const senderId = message.sender_id;
           const senderName = message.sender_name;
+          const isRead = message.is_read || false;
 
           // Format new message
           const newMessage: Message = {
@@ -210,11 +212,11 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
             content: message.content,
             sender: senderName,
             sender_id: senderId,
+            receiver: message.receiver || "", // Add receiver name
+            receiver_id: message.receiver_id || 0, // Add receiver ID
             timestamp: new Date(message.timestamp),
-            message_type: message.message_type,
-            isFile: message.message_type === "file",
-            fileName: message.file_name,
-            fileUrl: message.file_url,
+            files: message.files || [], // Add files array
+            is_read: isRead,
           };
 
           // Check if we already have a chat session with this user

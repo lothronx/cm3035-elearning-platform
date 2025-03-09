@@ -11,6 +11,7 @@ interface PersonalDetailsProps {
   userData: {
     firstName: string;
     lastName: string;
+    username: string;
     role: string;
     photo: string;
     status: string;
@@ -44,18 +45,20 @@ export function PersonalDetails({ userData, onStatusUpdate, onPhotoUpdate }: Per
           </div>
 
           {/* Name and Status - Right Side */}
-          <div className="flex flex-1 flex-col gap-3 text-center sm:text-left">
+          <div className="flex flex-1 flex-col text-center sm:text-left">
             <div className="flex flex-col items-center sm:flex-row sm:items-center sm:gap-2">
               <h3 className="text-2xl font-medium tracking-tight text-secondary">
                 {userData.firstName} {userData.lastName}
               </h3>
-              <Badge variant={userData.role === "teacher" ? "default" : "secondary"}>
+              <Badge variant={userData.role == "teacher" ? "default" : "secondary"}>
                 {userData.role}
               </Badge>
             </div>
-
-            {/* Status */}
             <div className="w-full">
+              <p className="text-muted-foreground">@{userData.username}</p>
+            </div>
+            {/* Status */}
+            <div className="w-full mt-3">
               <Status initialStatus={userData.status} onStatusUpdate={onStatusUpdate} />
             </div>
           </div>

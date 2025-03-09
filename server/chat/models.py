@@ -3,10 +3,6 @@ from accounts.models import User
 
 
 class ChatMessage(models.Model):
-    MESSAGE_TYPE_CHOICES = (
-        ("text", "Text"),
-        ("file", "File"),
-    )
     sender = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="messages_sent"
     )
@@ -14,13 +10,11 @@ class ChatMessage(models.Model):
         User, on_delete=models.CASCADE, related_name="messages_received"
     )
     content = models.TextField()
-    message_type = models.CharField(
-        max_length=10, choices=MESSAGE_TYPE_CHOICES, default="text"
-    )
     timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Message from {self.sender.username} to {self.receiver.username}"
+        return f"Message from {self.sender.get_full_name()} to {self.receiver.get_full_name()}"
 
 
 class FileUpload(models.Model):

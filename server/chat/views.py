@@ -41,6 +41,7 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
     def get_contacts(self, request):
         """
         GET: Retrieve a list of users the current user has chatted with
+        Returns id, name, lastMessage, and unreadCount for each contact
         """
         user = request.user
         # Find all users who have sent messages to or received messages from the current user
@@ -52,11 +53,29 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
         contacts = User.objects.filter(id__in=contact_ids)
         
         # Format the response
-        contacts_data = [{
-            'id': contact.id,
-            'username': contact.username,
-            # Add any other user fields you want to include
-        } for contact in contacts]
+        contacts_data = []
+        for contact in contacts:
+            # Get the last message between current user and this contact
+            last_message = ChatMessage.objects.filter(
+                (Q(sender=user) & Q(receiver=contact)) |
+                (Q(sender=contact) & Q(receiver=user))
+            ).order_by('-timestamp').first()
+            
+            # Count unread messages from this contact
+            unread_count = ChatMessage.objects.filter(
+                sender=contact,
+                receiver=user,
+                is_read=False
+            ).count()
+            
+            # Prepare contact data
+            contact_data = {
+                'id': str(contact.id),  # Convert to string to match the client interface
+                'name': f"{contact.first_name} {contact.last_name}".strip() or contact.username,
+                'lastMessage': last_message.content if last_message else "",
+                'unreadCount': unread_count
+            }
+            contacts_data.append(contact_data)
         
         return Response(contacts_data)
 
@@ -76,7 +95,13 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
                 (Q(sender=other_user) & Q(receiver=current_user))
             ).order_by('timestamp')  # Chronological order
             
-            serializer = self.get_serializer(messages, many=True)
+            # Mark messages from the other user as read
+            unread_messages = messages.filter(sender=other_user, receiver=current_user, is_read=False)
+            for message in unread_messages:
+                message.is_read = True
+                message.save()
+            
+            serializer = ChatMessageSerializer(messages, many=True, context={'request': request})
             return Response(serializer.data)
         
         except User.DoesNotExist:
@@ -85,6 +110,38 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+    @action(detail=False, methods=['post'], url_path='mark-read/(?P<user_id>[^/.]+)')
+    def mark_messages_read(self, request, user_id=None):
+        """
+        POST: Mark all messages from specified user to current user as read
+        """
+        try:
+            # Check if other user exists
+            other_user = User.objects.get(id=user_id)
+            current_user = request.user
+            
+            # Find unread messages from this user
+            unread_messages = ChatMessage.objects.filter(
+                sender=other_user,
+                receiver=current_user,
+                is_read=False
+            )
+            
+            # Mark all as read
+            count = unread_messages.count()
+            unread_messages.update(is_read=True)
+            
+            return Response({
+                'success': True,
+                'messages_marked_read': count
+            })
+            
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
     @action(detail=False, methods=['post'], url_path='send')
     def send_message(self, request):
         """
@@ -118,7 +175,9 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST
                         )
                 
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                # Serialize with request context to get proper URLs
+                response_serializer = self.get_serializer(message, context={'request': request})
+                return Response(response_serializer.data, status=status.HTTP_201_CREATED)
             
             except User.DoesNotExist:
                 return Response(

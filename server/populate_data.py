@@ -293,13 +293,11 @@ def populate():
         sender=student1,
         receiver=teacher1,
         content="Hi, I saw the syllabus for AWD, when is the next class?",
-        message_type="text",
     )
     message2 = ChatMessage.objects.create(
         sender=teacher1,
         receiver=student1,
         content="Next class is on Friday at 10 AM.",
-        message_type="text",
     )
 
     # Attach Files to Chat Messages

@@ -5,7 +5,6 @@ import { Toaster, toast } from "sonner";
 import { Navbar } from "@/components/navbar/navbar";
 import { PersonalDetails } from "@/components/dashboard/personal-details";
 import { MyCourses } from "@/components/dashboard/my-courses";
-import { ChatBox } from "@/components/navbar/chat-box";
 import { useRouter } from "next/navigation";
 import { handleUnauthorized, fetchWithAuth, checkAuthStatus } from "@/lib/auth";
 
@@ -15,6 +14,7 @@ export default function Dashboard() {
   const [userData, setUserData] = useState({
     firstName: "",
     lastName: "",
+    username: "",
     role: "",
     photo: "",
     status: "",
@@ -36,11 +36,13 @@ export default function Dashboard() {
         setUserData({
           firstName: data.first_name,
           lastName: data.last_name,
+          username: data.username,
           role: data.role,
           photo: data.photo,
           status: data.status,
           courses: data.courses,
         });
+        console.log(data);
       } catch (error) {
         console.error(error);
       }

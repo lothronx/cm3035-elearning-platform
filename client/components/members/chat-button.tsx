@@ -32,13 +32,8 @@ export function ChatButton({ userId, username, className = "w-full" }: ChatButto
 
     setIsLoading(true);
     try {
-      // Ensure chat session exists
-      await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/ensure-session/${userId}/`, {
-        method: "POST",
-      });
-
       // Open the chat interface by dispatching a custom event
-      window.dispatchEvent(new CustomEvent('openChat', { detail: { userId } }));
+      window.dispatchEvent(new CustomEvent("openChat", { detail: { userId } }));
     } catch (error) {
       console.error("Error starting chat:", error);
     } finally {

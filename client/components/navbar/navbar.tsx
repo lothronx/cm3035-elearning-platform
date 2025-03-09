@@ -68,7 +68,7 @@ export function Navbar() {
               className="text-primary-foreground hover:text-primary dark:text-slate-300 text-md">
               <Link href="/courses">Explore</Link>
             </Button>
-            {user?.role === "teacher" && (
+            {user?.role == "teacher" && (
               <Button
                 variant="ghost"
                 asChild
