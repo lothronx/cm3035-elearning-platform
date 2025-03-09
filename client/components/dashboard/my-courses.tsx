@@ -44,7 +44,7 @@ export function MyCourses({ courses, onCreateCourse }: MyCoursesProps) {
   };
 
   return (
-    <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
+    <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 ">
       <CardHeader className="pb-2 flex flex-row justify-between items-center">
         <CardTitle className="text-2xl font-medium text-secondary">{title}</CardTitle>
         {isTeacher && courses.length > 0 && (

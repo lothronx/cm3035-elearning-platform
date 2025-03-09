@@ -7,7 +7,6 @@ import { fetchWithAuth, checkAuthStatus } from "@/lib/auth";
 interface User {
   id: number;
   username: string;
-  email: string;
   role: string;
 }
 

@@ -2,184 +2,173 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ChatSidebar from "@/components/navbar/chat-sidebar";
 import ChatWindow from "@/components/navbar/chat-window";
-import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useMobile } from "@/hooks/use-mobile";
+import { useUser } from "@/contexts/user-context";
+import { fetchWithAuth } from "@/lib/auth";
+import { toast } from "sonner";
 
 // Define types for our chat data
 export type Message = {
   id: string;
   content: string;
   sender: string;
+  sender_id?: string;
   timestamp: Date;
   isFile?: boolean;
   fileName?: string;
   fileUrl?: string;
+  message_type?: string;
 };
 
 export type ChatSession = {
   id: string;
   name: string;
-  avatar: string;
+  avatar?: string;
   lastMessage: string;
   unreadCount: number;
   messages: Message[];
+  user_id?: string;
 };
 
-// Sample data
-export const initialChatSessions: ChatSession[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    avatar: "/placeholder.svg?height=40&width=40",
-    lastMessage: "Hey, how's it going?",
-    unreadCount: 2,
-    messages: [
-      {
-        id: "m1",
-        content: "Hey there!",
-        sender: "John Doe",
-        timestamp: new Date(Date.now() - 3600000),
-      },
-      {
-        id: "m2",
-        content: "Hi! How can I help you today?",
-        sender: "me",
-        timestamp: new Date(Date.now() - 3500000),
-      },
-      {
-        id: "m3",
-        content: "I was wondering about the project deadline",
-        sender: "John Doe",
-        timestamp: new Date(Date.now() - 3400000),
-      },
-      {
-        id: "m4",
-        content: "Hey, how's it going?",
-        sender: "John Doe",
-        timestamp: new Date(Date.now() - 1000000),
-      },
-    ],
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    avatar: "/placeholder.svg?height=40&width=40",
-    lastMessage: "The documents are ready",
-    unreadCount: 0,
-    messages: [
-      {
-        id: "m5",
-        content: "Hello",
-        sender: "Jane Smith",
-        timestamp: new Date(Date.now() - 86400000),
-      },
-      {
-        id: "m6",
-        content: "Hi Jane, what's up?",
-        sender: "me",
-        timestamp: new Date(Date.now() - 86300000),
-      },
-      {
-        id: "m7",
-        content: "I've prepared the documents you asked for",
-        sender: "Jane Smith",
-        timestamp: new Date(Date.now() - 86200000),
-      },
-      {
-        id: "m8",
-        content: "The documents are ready",
-        sender: "Jane Smith",
-        timestamp: new Date(Date.now() - 86100000),
-        isFile: true,
-        fileName: "project_docs.pdf",
-        fileUrl: "#",
-      },
-    ],
-  },
-  {
-    id: "3",
-    name: "Team Chat",
-    avatar: "/placeholder.svg?height=40&width=40",
-    lastMessage: "Meeting at 3pm",
-    unreadCount: 5,
-    messages: [
-      {
-        id: "m9",
-        content: "Good morning team!",
-        sender: "Alex",
-        timestamp: new Date(Date.now() - 172800000),
-      },
-      {
-        id: "m10",
-        content: "Morning!",
-        sender: "me",
-        timestamp: new Date(Date.now() - 172700000),
-      },
-      {
-        id: "m11",
-        content: "Don't forget we have a meeting today",
-        sender: "Sarah",
-        timestamp: new Date(Date.now() - 172600000),
-      },
-      {
-        id: "m12",
-        content: "Meeting at 3pm",
-        sender: "Alex",
-        timestamp: new Date(Date.now() - 172500000),
-      },
-    ],
-  },
-];
-
 interface ChatInterfaceProps {
-  onClose: () => void;
   chatSessions: ChatSession[];
   setChatSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>;
+  fetchMessages: (userId: string) => Promise<void>;
 }
 
-export function ChatInterface({ onClose, chatSessions, setChatSessions }: ChatInterfaceProps) {
-  const [activeChatId, setActiveChatId] = useState<string>(chatSessions[0].id);
+export function ChatInterface({
+  chatSessions,
+  setChatSessions,
+  fetchMessages,
+}: ChatInterfaceProps) {
+  const [activeChatId, setActiveChatId] = useState<string>(
+    chatSessions.length > 0 ? chatSessions[0].id : ""
+  );
   const [showSidebar, setShowSidebar] = useState(true);
-  const isMobile = useMobile();
+  const [, setIsLoading] = useState(false);
+  const { socket, user } = useUser();
 
   const activeChat = chatSessions.find((chat) => chat.id === activeChatId);
 
-  const handleSendMessage = (content: string, file?: File) => {
-    if (!content && !file) return;
-
-    const newMessage: Message = {
-      id: `m${Date.now()}`,
-      content: content,
-      sender: "me",
-      timestamp: new Date(),
-    };
-
-    if (file) {
-      newMessage.isFile = true;
-      newMessage.fileName = file.name;
-      newMessage.fileUrl = URL.createObjectURL(file);
+  useEffect(() => {
+    // If we have chat sessions but no active chat ID, set the first one as active
+    if (chatSessions.length > 0 && !activeChatId) {
+      setActiveChatId(chatSessions[0].id);
     }
 
-    setChatSessions((prev) =>
-      prev.map((session) => {
-        if (session.id === activeChatId) {
-          return {
-            ...session,
-            messages: [...session.messages, newMessage],
-            lastMessage: content || file?.name || "File",
-          };
-        }
-        return session;
-      })
-    );
+    // If we have an active chat ID but no messages, fetch them
+    if (activeChatId && activeChat && activeChat.messages.length === 0) {
+      fetchMessages(activeChatId);
+    }
+  }, [chatSessions, activeChatId, activeChat, fetchMessages]);
+
+  const handleSendMessage = async (content: string, file?: File) => {
+    if (!content && !file) return;
+    if (!activeChatId || !user) {
+      toast.error("Unable to send message");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Create optimistic message
+      const tempId = `temp-${Date.now()}`;
+      const newMessage: Message = {
+        id: tempId,
+        content: content,
+        sender: "me",
+        sender_id: user.id ? user.id.toString() : "",
+        timestamp: new Date(),
+        message_type: file ? "file" : "text",
+        isFile: !!file,
+        fileName: file?.name,
+      };
+
+      // Update UI immediately for better UX
+      setChatSessions((prev) =>
+        prev.map((session) => {
+          if (session.id === activeChatId) {
+            return {
+              ...session,
+              messages: [...session.messages, newMessage],
+              lastMessage: content || file?.name || "File",
+            };
+          }
+          return session;
+        })
+      );
+
+      // Prepare form data for file upload if needed
+      let formData;
+      if (file) {
+        formData = new FormData();
+        formData.append("file", file);
+        formData.append("receiver_id", activeChatId);
+        formData.append("content", content || "File attachment");
+      }
+
+      // Send message through API
+      const endpoint = file
+        ? `${process.env.NEXT_PUBLIC_API_URL}/api/chat/send-file/`
+        : `${process.env.NEXT_PUBLIC_API_URL}/api/chat/send-message/`;
+
+      const response = await fetchWithAuth(endpoint, {
+        method: "POST",
+        headers: file
+          ? undefined
+          : {
+              "Content-Type": "application/json",
+            },
+        body: file
+          ? formData
+          : JSON.stringify({
+              receiver_id: activeChatId,
+              content: content,
+            }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send message");
+      }
+
+      // If websocket is not connected, we'll need to fetch messages to get the real ID
+      if (!socket || !socket.readyState) {
+        await fetchMessages(activeChatId);
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
+
+      // Remove optimistic message if failed
+      setChatSessions((prev) =>
+        prev.map((session) => {
+          if (session.id === activeChatId) {
+            return {
+              ...session,
+              messages: session.messages.filter((msg) => !msg.id.startsWith("temp-")),
+            };
+          }
+          return session;
+        })
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSelectChat = (chatId: string) => {
+  const handleSelectChat = async (chatId: string) => {
     setActiveChatId(chatId);
+
+    // Fetch messages if we haven't loaded them yet
+    const selectedChat = chatSessions.find((c) => c.id === chatId);
+    if (selectedChat && selectedChat.messages.length === 0) {
+      await fetchMessages(chatId);
+    }
+
+    // Mark as read in UI
     setChatSessions((prev) =>
       prev.map((session) => {
         if (session.id === chatId) {
@@ -192,22 +181,25 @@ export function ChatInterface({ onClose, chatSessions, setChatSessions }: ChatIn
       })
     );
 
-    if (isMobile) {
-      setShowSidebar(false);
+    // Mark as read in backend
+    try {
+      await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/mark-read/${chatId}/`, {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
     }
   };
 
+  // Pass the loading state to the chat window component for UI feedback
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b p-2">
-        <h2 className="text-lg text-secondary font-semibold ml-2">Messages</h2>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
+        <h2 className="text-lg text-secondary font-semibold ml-2">Chat</h2>
       </div>
 
       <div className="flex h-[calc(100%-48px)] overflow-hidden">
-        {(showSidebar || !isMobile) && (
+        {showSidebar && (
           <ChatSidebar
             chatSessions={chatSessions}
             activeChatId={activeChatId}
@@ -215,12 +207,12 @@ export function ChatInterface({ onClose, chatSessions, setChatSessions }: ChatIn
           />
         )}
 
-        {(!showSidebar || !isMobile) && activeChat && (
+        {!showSidebar && activeChat && (
           <ChatWindow
             chat={activeChat}
             onSendMessage={handleSendMessage}
             onToggleSidebar={() => setShowSidebar(!showSidebar)}
-            showBackButton={isMobile && !showSidebar}
+            showBackButton={!showSidebar}
           />
         )}
       </div>

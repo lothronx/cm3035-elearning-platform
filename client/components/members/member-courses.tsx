@@ -3,23 +3,17 @@
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-interface Course {
-  id: number;
-  name: string;
-}
-
-interface MemberCoursesProps {
+import { Course } from "@/types/member";
+export interface MemberCoursesProps {
   courses: Course[];
   userRole: string;
 }
-
 export function MemberCourses({ courses, userRole }: MemberCoursesProps) {
   const title = userRole === "teacher" ? "Teaching" : "Enrolled";
 
   return (
     <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 flex flex-row justify-between items-center">
         <CardTitle className="text-2xl font-medium text-secondary">{title}</CardTitle>
       </CardHeader>
       <CardContent>
@@ -27,16 +21,14 @@ export function MemberCourses({ courses, userRole }: MemberCoursesProps) {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
             {courses.map((course) => (
               <Link key={course.id} href={`/courses/${course.id}`} className="group block">
-                <div className="rounded-xl border-dashed border-2 border-background bg-background-light p-4 shadow-sm transition-all duration-300 hover:bg-primary/10 hover:shadow-md ">
-                  <div className="mb-3 flex items-center">
+                <Card className="h-full bg-background-light transition-all duration-300 hover:bg-primary/10 hover:shadow-md">
+                  <CardHeader className="flex flex-row items-center justify-start gap-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
                       <BookOpen className="h-4 w-4" />
                     </div>
-                  </div>
-                  <h3 className="text-base font-medium text-secondary group-hover:text-secondary">
-                    {course.name}
-                  </h3>
-                </div>
+                    <span className="text-base font-medium text-secondary">{course.name}</span>
+                  </CardHeader>
+                </Card>
               </Link>
             ))}
           </div>

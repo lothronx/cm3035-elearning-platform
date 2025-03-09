@@ -7,18 +7,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { checkAuthStatus, fetchWithAuth, handleUnauthorized } from "@/lib/auth";
 import { AccessDenied } from "@/components/access-denied";
-import { ChatBox } from "@/components/navbar/chat-box";
-
-// Define the Member interface to match the API response
-interface Member {
-  id: string;
-  first_name: string;
-  last_name: string;
-  username: string;
-  status: string;
-  photo: string;
-  role: string;
-}
+import { Member } from "@/types/member";
+import { mapApiMembersToMembers } from "@/lib/api-utils";
 
 export default function MembersPage() {
   const router = useRouter();
@@ -52,8 +42,10 @@ export default function MembersPage() {
           throw new Error(`Failed to fetch members: ${response.statusText}`);
         }
 
-        const data = await response.json();
-        setMembers(data);
+        const apiData = await response.json();
+        // Use our utility function to map API data to application format
+        const mappedMembers = mapApiMembersToMembers(apiData);
+        setMembers(mappedMembers);
       } catch (error) {
         console.error("Error fetching members:", error);
         setError("Failed to load members. Please try again later.");
@@ -100,7 +92,6 @@ export default function MembersPage() {
           </div>
         )}
       </div>
-      {/* Chat Box */}
     </div>
   );
 }

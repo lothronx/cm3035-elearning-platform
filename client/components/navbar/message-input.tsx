@@ -8,10 +8,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { Paperclip, Send } from "lucide-react"
 
 interface MessageInputProps {
-  onSendMessage: (content: string, file?: File) => void
+  onSendMessage: (content: string, file?: File) => void;
+  isLoading?: boolean;
 }
 
-export default function MessageInput({ onSendMessage }: MessageInputProps) {
+export default function MessageInput({ onSendMessage, isLoading = false }: MessageInputProps) {
   const [message, setMessage] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -50,7 +51,7 @@ export default function MessageInput({ onSendMessage }: MessageInputProps) {
       )}
 
       <div className="flex gap-1 items-center">
-        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
           <Paperclip className="h-4 w-4" />
           <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
         </Button>
@@ -64,7 +65,7 @@ export default function MessageInput({ onSendMessage }: MessageInputProps) {
           rows={1}
         />
 
-        <Button type="submit" size="sm" disabled={!message.trim() && !file}>
+        <Button type="submit" size="sm" disabled={(!message.trim() && !file) || isLoading}>
           <Send className="h-4 w-4" />
         </Button>
       </div>
