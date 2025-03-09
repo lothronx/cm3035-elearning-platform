@@ -32,9 +32,6 @@ django_asgi_app = get_asgi_application()
 
 # Main ASGI Application Configuration
 application = ProtocolTypeRouter(
-    """
-    Protocol type router that handles both HTTP and WebSocket connections
-    """
     {
         # HTTP protocol handler
         "http": django_asgi_app,
