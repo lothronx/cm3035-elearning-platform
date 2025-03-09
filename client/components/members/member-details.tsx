@@ -52,7 +52,7 @@ export function MemberDetails({ member }: MemberDetailsProps) {
 
           {/* Chat Button - Right Side */}
           <div className="flex items-center">
-            <ChatButton userId={member.id} username={`${member.firstName} ${member.lastName}`} />
+            <ChatButton userId={member.id} />
           </div>
         </div>
       </CardContent>

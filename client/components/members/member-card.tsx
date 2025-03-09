@@ -32,7 +32,7 @@ export function MemberCard({ member }: MemberCardProps) {
         </CardContent>
       </Link>
       <CardFooter className="pb-4">
-        <ChatButton userId={member.id} username={`${member.firstName} ${member.lastName}`} />
+        <ChatButton userId={member.id} />
       </CardFooter>
     </Card>
   );

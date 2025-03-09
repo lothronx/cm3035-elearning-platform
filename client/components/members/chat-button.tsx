@@ -4,16 +4,15 @@ import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { useUser } from "@/contexts/user-context";
-import { fetchWithAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
 interface ChatButtonProps {
   userId?: string;
-  username?: string;
+
   className?: string;
 }
 
-export function ChatButton({ userId, username, className = "w-full" }: ChatButtonProps) {
+export function ChatButton({ userId, className = "w-full" }: ChatButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useUser();
 
@@ -33,7 +32,14 @@ export function ChatButton({ userId, username, className = "w-full" }: ChatButto
     setIsLoading(true);
     try {
       // Open the chat interface by dispatching a custom event
-      window.dispatchEvent(new CustomEvent("openChat", { detail: { userId } }));
+      window.dispatchEvent(
+        new CustomEvent("openChat", {
+          detail: {
+            userId: parseInt(userId),
+            isNewChat: true,
+          },
+        })
+      );
     } catch (error) {
       console.error("Error starting chat:", error);
     } finally {

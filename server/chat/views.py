@@ -21,7 +21,11 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
         )
 
     def list(self, request):
-        """GET /api/chat/ - Get all chat sessions for current user"""
+        """GET /api/chat/ - Get all chat sessions for current user
+
+        This endpoint now serves as a fallback for when WebSocket is not available.
+        The primary method for getting chat sessions is via WebSocket.
+        """
         user = request.user
 
         # Get all users who have chatted with the current user
@@ -50,7 +54,11 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
                 {
                     "id": partner.id,
                     "name": partner.get_full_name() or partner.username,
-                    "last_message": latest_message.content or "Sent a file",
+                    "last_message": (
+                        latest_message.content or "Sent a file"
+                        if latest_message
+                        else ""
+                    ),
                     "is_unread": has_unread,
                 }
             )
@@ -58,7 +66,11 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
         return Response(chat_sessions)
 
     def retrieve(self, request, pk=None):
-        """GET /api/chat/{id}/ - Get chat messages with a specific user"""
+        """GET /api/chat/{id}/ - Get chat messages with a specific user
+
+        This endpoint now serves as a fallback for when WebSocket is not available.
+        The primary method for getting chat history is via WebSocket.
+        """
         try:
             other_user = User.objects.get(id=pk)
             current_user = request.user
@@ -70,7 +82,9 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
             ).order_by("timestamp")
 
             # Mark all messages in this chat session as read
-            messages.filter(is_read=False).update(is_read=True)
+            messages.filter(
+                sender=other_user, receiver=current_user, is_read=False
+            ).update(is_read=True)
 
             serializer = self.get_serializer(
                 messages, many=True, context={"request": request}
@@ -84,6 +98,11 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """POST /api/chat/ - Send a message to a specific user
+
+        This endpoint handles both text messages and file uploads.
+        For text-only messages, WebSocket is the preferred method, but this endpoint
+        serves as a fallback when WebSocket is not available.
+        For file uploads, this endpoint is still the primary method.
 
         Body parameters:
         - receiver: ID of the user to send the message to
