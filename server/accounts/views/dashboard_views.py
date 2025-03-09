@@ -9,42 +9,27 @@ from courses.serializers import CourseSerializer, EnrollmentSerializer
 
 
 class DashboardViewSet(viewsets.ViewSet):
+    """
+    API endpoint that provides dashboard functionality for both teachers and students.
+
+    Includes:
+    - Course listings based on user role
+    - Status updates
+    - Profile photo updates
+    """
+
     permission_classes = [IsAuthenticated]
 
     def list(self, request):
-        user = request.user
-        courses = []
+        """
+        Retrieve dashboard information for the authenticated user.
 
-        if user.role == "teacher":
-            # For teachers, get courses they teach
-            # Exclude admin users from results per security requirements
-            queryset = Course.objects.filter(teacher=user).exclude(
-                Q(teacher__is_superuser=True) | Q(teacher__is_staff=True)
-            ).order_by("-is_active")
-            courses_taught = CourseSerializer(queryset, many=True).data
-            courses = [
-                {
-                    "id": course["id"],
-                    "name": course["title"],
-                    "is_active": course["is_active"],
-                }
-                for course in courses_taught
-            ]
-        else:
-            # For students, get enrolled courses
-            # Exclude admin users from results per security requirements
-            queryset = Enrollment.objects.filter(student=user).exclude(
-                Q(course__teacher__is_superuser=True) | Q(course__teacher__is_staff=True)
-            ).order_by("is_completed")
-            enrollments = EnrollmentSerializer(queryset, many=True).data
-            courses = [
-                {
-                    "id": enrollment["course_id"],
-                    "name": enrollment["course"],
-                    "is_active": not enrollment["is_completed"],
-                }
-                for enrollment in enrollments
-            ]
+        Returns:
+        - User details
+        - List of courses (taught for teachers, enrolled for students)
+        """
+        user = request.user
+        courses = self._get_user_courses(user)
 
         return Response(
             {
@@ -62,40 +47,119 @@ class DashboardViewSet(viewsets.ViewSet):
             status=status.HTTP_200_OK,
         )
 
+    def _get_user_courses(self, user):
+        """
+        Helper method to get courses based on user role.
+
+        Args:
+            user: The authenticated user object
+
+        Returns:
+            List of course dictionaries with id, name, and active status
+        """
+        if user.role == "teacher":
+            return self._get_teacher_courses(user)
+        return self._get_student_courses(user)
+
+    def _get_teacher_courses(self, teacher):
+        """
+        Get courses taught by a teacher, excluding admin-taught courses.
+
+        Args:
+            teacher: The teacher user object
+
+        Returns:
+            List of course dictionaries
+        """
+        queryset = (
+            Course.objects.filter(teacher=teacher)
+            .exclude(Q(teacher__is_superuser=True) | Q(teacher__is_staff=True))
+            .order_by("-is_active")
+        )
+        courses_taught = CourseSerializer(queryset, many=True).data
+        return [
+            {
+                "id": course["id"],
+                "name": course["title"],
+                "is_active": course["is_active"],
+            }
+            for course in courses_taught
+        ]
+
+    def _get_student_courses(self, student):
+        """
+        Get courses enrolled by a student, excluding admin-taught courses.
+
+        Args:
+            student: The student user object
+
+        Returns:
+            List of course dictionaries
+        """
+        queryset = (
+            Enrollment.objects.filter(student=student)
+            .exclude(
+                Q(course__teacher__is_superuser=True)
+                | Q(course__teacher__is_staff=True)
+            )
+            .order_by("is_completed")
+        )
+        enrollments = EnrollmentSerializer(queryset, many=True).data
+        return [
+            {
+                "id": enrollment["course_id"],
+                "name": enrollment["course"],
+                "is_active": not enrollment["is_completed"],
+            }
+            for enrollment in enrollments
+        ]
+
     @action(detail=False, methods=["patch"], url_path="patch-status")
     def patch_status(self, request):
+        """
+        Update the user's status.
+
+        Validates:
+        - Status must be a string
+        - Status length must be <= 255 characters
+        """
         user = request.user
         new_status = request.data.get("status")
 
-        # Validate the status value - ensure it's a string and not too long
-        if new_status:
-            if not isinstance(new_status, str):
-                return Response(
-                    {"detail": "Status must be a text description"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        if not new_status:
+            return Response(
+                {"detail": "Status is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-            # Add a maximum length check if needed
-            if len(new_status) > 255:
-                return Response(
-                    {
-                        "detail": "Status description is too long (maximum 500 characters)"
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        if not isinstance(new_status, str):
+            return Response(
+                {"detail": "Status must be a text description"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-            user.status = new_status
-            user.save()
+        if len(new_status) > 255:
+            return Response(
+                {"detail": "Status description is too long (maximum 255 characters)"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.status = new_status
+        user.save()
 
         return Response(
-            {
-                "status": user.status,
-            },
+            {"status": user.status},
             status=status.HTTP_200_OK,
         )
 
     @action(detail=False, methods=["patch"], url_path="patch-photo")
     def patch_photo(self, request):
+        """
+        Update the user's profile photo.
+
+        Validates:
+        - Photo must be provided in request.FILES
+        """
         user = request.user
 
         if "photo" not in request.FILES:
@@ -108,17 +172,15 @@ class DashboardViewSet(viewsets.ViewSet):
             user.photo = request.FILES["photo"]
             user.save()
 
-            # Check if the photo was successfully saved
             if user.photo:
                 return Response(
                     {"photo": request.build_absolute_uri(user.photo.url)},
                     status=status.HTTP_200_OK,
                 )
-            else:
-                return Response(
-                    {"detail": "Failed to save the photo"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
+            return Response(
+                {"detail": "Failed to save the photo"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         except Exception as e:
             return Response(
                 {"detail": f"Error updating photo: {str(e)}"},

@@ -1,23 +1,26 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User
-
+from accounts.models import User
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    list_display = ("username", "email", "role", "is_active", "date_joined")
+    list_display = (
+        "username",
+        "first_name",
+        "last_name",
+        "role",
+        "is_active",
+        "date_joined",
+    )
     list_filter = ("role", "is_active", "is_staff", "is_superuser")
-    search_fields = ("username", "email", "first_name", "last_name")
+    search_fields = ("username", "first_name", "last_name")
     ordering = ("-date_joined",)
     fieldsets = (
         (None, {"fields": ("username", "password")}),
-        (
-            "Personal Info",
-            {"fields": ("first_name", "last_name", "email", "photo", "status")},
-        ),
+        ("Personal Info", {"fields": ("first_name", "last_name", "photo", "status")}),
         ("Role", {"fields": ("role",)}),
         ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser")}),
-        ("Important dates", {"fields": ("last_login", "date_joined")}),
+        ("Important dates", {"fields": ("date_joined",)}),
     )
     add_fieldsets = (
         (
@@ -26,9 +29,11 @@ class CustomUserAdmin(UserAdmin):
                 "classes": ("wide",),
                 "fields": (
                     "username",
-                    "email",
-                    "password1",
-                    "password2",
+                    "first_name",
+                    "last_name",
+                    "photo",
+                    "status",
+                    "password",
                     "role",
                     "is_active",
                     "is_staff",
