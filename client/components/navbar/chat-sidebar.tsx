@@ -2,40 +2,31 @@
 
 import { ChatSession } from "@/types/message";
 import { cn } from "@/lib/utils";
-import { BadgeMini } from "@/components/ui/badge-mini";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ChatSidebarProps {
-  chatSessions: ChatSession[];
-  activeChatId: string;
-  onSelectChat: (chatId: string) => void;
+  contacts: ChatSession[];
+  activeChatId: number;
+  onSelectChat: (chatId: number) => void;
 }
 
-export default function ChatSidebar({
-  chatSessions,
-  activeChatId,
-  onSelectChat,
-}: ChatSidebarProps) {
+export default function ChatSidebar({ contacts, activeChatId, onSelectChat }: ChatSidebarProps) {
   return (
-    <div className="w-full border-r md:w-64">
+    <div className="flex-1/3 border-r">
       <ScrollArea className="h-full">
-        <div className="p-1">
-          {chatSessions.map((chat, index) => (
+        <div className="py-2 px-2">
+          {contacts.map((chat, index) => (
             <div
               key={`chat-${chat.id}-${index}`}
               className={cn(
-                "flex cursor-pointer items-center gap-2 rounded-sm p-2 m-1 transition-colors hover:bg-primary/10 text-sm",
+                "flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 mb-2 transition-colors hover:bg-primary/10 text-sm",
                 chat.id === activeChatId && "bg-primary/10"
               )}
               onClick={() => onSelectChat(chat.id)}>
               <div className="flex-1 overflow-hidden">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium">{chat.name}</h3>
-                  {chat.unreadCount > 0 && (
-                    <BadgeMini variant="default" className="ml-auto text-xs">
-                      {chat.unreadCount}
-                    </BadgeMini>
-                  )}
+                <div className="flex items-center">
+                  <h3 className="font-medium pr-2">{chat.name}</h3>
+                  {chat.isUnread && <span className="h-2 w-2 rounded-full bg-red-500" />}
                 </div>
                 <p className="truncate text-xs text-muted-foreground">{chat.lastMessage}</p>
               </div>

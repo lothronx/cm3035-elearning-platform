@@ -2,6 +2,7 @@
  * Utility functions for handling API responses
  */
 import { Member } from "@/types/member";
+import { ChatSession } from "@/types/message";
 
 /**
  * Interface for API response member with snake_case properties

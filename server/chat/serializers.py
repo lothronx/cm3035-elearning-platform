@@ -1,54 +1,47 @@
 from rest_framework import serializers
-from .models import ChatMessage, FileUpload
+from django.urls import reverse
+from .models import ChatMessage
 
 
-class FileUploadSerializer(serializers.ModelSerializer):
+class ChatFileSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    type = serializers.SerializerMethodField()
     title = serializers.SerializerMethodField()
     url = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = FileUpload
-        fields = ["id", "title", "url"]
-    
+
+    def get_type(self, obj):
+        if obj.file:
+            return obj.file.name.split('.')[-1].lower()
+        return None
+
     def get_title(self, obj):
-        # Extract the file name from the file path
-        return obj.file.name.split('/')[-1]
-    
+        if obj.file:
+            return obj.file.name.split('/')[-1]
+        return None
+
     def get_url(self, obj):
-        request = self.context.get('request')
-        if request is not None:
-            return request.build_absolute_uri(obj.file.url)
-        return obj.file.url
+        if obj.file:
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.file.url) if request else obj.file.url
+        return None
 
 
 class ChatMessageSerializer(serializers.ModelSerializer):
-    sender = serializers.CharField(
-        source="sender.get_full_name", read_only=True
-    )  # Display sender's full name
-    sender_id = serializers.IntegerField(
-        source="sender.id", read_only=True
-    )  # Explicitly include sender ID
-    receiver = serializers.CharField(
-        source="receiver.get_full_name", read_only=True
-    )  # Display receiver's full name
-    receiver_id = serializers.IntegerField(
-        source="receiver.id", read_only=True
-    )  # Explicitly include receiver ID
-    files = FileUploadSerializer(
-        many=True, read_only=True
-    )  # Nested serializer for files
+    isSender = serializers.SerializerMethodField()
+    file = ChatFileSerializer(source='*', read_only=True)
+
+    def get_isSender(self, obj):
+        request = self.context.get('request')
+        if request and request.user:
+            return obj.sender == request.user
+        return False
+
+    def validate(self, data):
+        if not data.get('content') and not self.context['request'].FILES.get('file'):
+            raise serializers.ValidationError("Either content or file must be provided")
+        return data
 
     class Meta:
         model = ChatMessage
-        fields = [
-            "id",
-            "sender",
-            "sender_id",
-            "receiver",
-            "receiver_id",
-            "content",
-            "timestamp",
-            "files",
-            "is_read",
-        ]
-        read_only_fields = ["id", "timestamp"]
+        fields = ['id', 'isSender', 'content', 'timestamp', 'file']
+        read_only_fields = ['id', 'timestamp']

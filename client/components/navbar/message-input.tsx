@@ -54,7 +54,7 @@ export default function MessageInput({ onSendMessage, isLoading = false }: Messa
         </div>
       )}
 
-      <div className="flex gap-1 items-center">
+      <div className="flex gap-1 items-center ">
         <Button
           type="button"
           variant="outline"
