@@ -225,6 +225,7 @@ export default function CourseDetails({
         onSubmit={onEdit}
         isSubmitting={isSubmitting}
         error={formError}
+        mode="edit"
       />
     </>
   );

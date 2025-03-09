@@ -17,16 +17,42 @@ class Course(models.Model):
 
 
 class CourseMaterial(models.Model):
+    """
+    Represents a material resource associated with a course.
+
+    Attributes:
+        course: The course this material belongs to (foreign key to Course model)
+        title: The title/name of the material
+        file: The actual file resource (stored in 'course_materials/' directory)
+        uploaded_at: Timestamp of when the material was uploaded
+        is_active: Status flag indicating if the material is active
+    """
     course = models.ForeignKey(
-        Course, on_delete=models.CASCADE, related_name="materials"
+        Course,
+        on_delete=models.CASCADE,
+        related_name='materials',
+        help_text='The course this material belongs to'
     )
-    title = models.CharField(max_length=255)
-    file = models.FileField(upload_to="course_materials/")
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-    is_active = models.BooleanField(default=True)
+    title = models.CharField(
+        max_length=255,
+        help_text='The title/name of the material'
+    )
+    file = models.FileField(
+        upload_to='course_materials/',
+        help_text='The actual file resource'
+    )
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text='Timestamp of when the material was uploaded'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Status flag indicating if the material is active'
+    )
 
     def __str__(self):
-        return f"{self.title} - {self.course.title}"
+        """Returns a string representation of the material."""
+        return f'Course Material: {self.title} (Course: {self.course.title})'
 
 
 class Enrollment(models.Model):

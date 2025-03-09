@@ -26,12 +26,37 @@ class IsCourseTeacher(permissions.BasePermission):
     Custom permission to only allow the teacher of a specific course to access or modify it.
     """
 
+    def has_permission(self, request, view):
+        # Basic authentication and role check
+        if not request.user.is_authenticated or request.user.role != "teacher":
+            return False
+
+        # For detail views (update, delete), we need to check the course ID from the URL
+        if view.action in ['update', 'partial_update', 'destroy'] and 'pk' in view.kwargs:
+            course_pk = view.kwargs.get('pk')
+            if not course_pk:
+                return False
+            # Check if user is the teacher of this course
+            return Course.objects.filter(id=course_pk, teacher=request.user).exists()
+            
+        # For nested views, get course_pk from URL parameters
+        course_pk = view.kwargs.get("course_pk")
+        if not course_pk:
+            return False
+
+        # Check if user is the course teacher
+        return Course.objects.filter(id=course_pk, teacher=request.user).exists()
+
     def has_object_permission(self, request, view, obj):
+        # Basic authentication and role check
+        if not request.user.is_authenticated or request.user.role != "teacher":
+            return False
+            
         # Works with Course objects or objects with a course attribute
         if isinstance(obj, Course):
-            return request.user.is_authenticated and obj.teacher == request.user
+            return obj.teacher.id == request.user.id
         elif hasattr(obj, "course"):
-            return request.user.is_authenticated and obj.course.teacher == request.user
+            return obj.course.teacher.id == request.user.id
         return False
 
 
@@ -39,6 +64,20 @@ class IsEnrolledStudent(permissions.BasePermission):
     """
     Custom permission to only allow students enrolled in a specific course to access it.
     """
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated or request.user.role != "student":
+            return False
+
+        # Get course_pk from URL parameters
+        course_pk = view.kwargs.get("course_pk")
+        if not course_pk:
+            return False
+
+        # Check if student is enrolled in the course
+        return Enrollment.objects.filter(
+            student=request.user, course_id=course_pk
+        ).exists()
 
     def has_object_permission(self, request, view, obj):
         if not request.user.is_authenticated or request.user.role != "student":
@@ -77,6 +116,30 @@ class IsCourseTeacherOrEnrolledStudent(permissions.BasePermission):
     Custom permission to allow course teachers full access and enrolled students read-only access.
     """
 
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+
+        # Get course_pk from URL parameters
+        course_pk = view.kwargs.get("course_pk")
+        if not course_pk:
+            return False
+
+        # Course teacher has full access
+        if request.user.role == "teacher":
+            return Course.objects.filter(id=course_pk, teacher=request.user).exists()
+
+        # Enrolled student has read-only access
+        if (
+            request.method in permissions.SAFE_METHODS
+            and request.user.role == "student"
+        ):
+            return Enrollment.objects.filter(
+                student=request.user, course_id=course_pk
+            ).exists()
+
+        return False
+
     def has_object_permission(self, request, view, obj):
         if not request.user.is_authenticated:
             return False
@@ -84,9 +147,9 @@ class IsCourseTeacherOrEnrolledStudent(permissions.BasePermission):
         # Course teacher has full access
         if request.user.role == "teacher":
             if isinstance(obj, Course):
-                return obj.teacher == request.user
+                return obj.teacher.id == request.user.id
             elif hasattr(obj, "course"):
-                return obj.course.teacher == request.user
+                return obj.course.teacher.id == request.user.id
 
         # Enrolled student has read-only access
         if (

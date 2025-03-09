@@ -20,7 +20,10 @@ interface CourseActivationDialogProps {
   onActivationToggle: () => void;
 }
 
-export function CourseActivationDialog({ course, onActivationToggle }: CourseActivationDialogProps) {
+export function CourseActivationDialog({
+  course,
+  onActivationToggle,
+}: CourseActivationDialogProps) {
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
 
   return (
@@ -46,8 +49,10 @@ export function CourseActivationDialog({ course, onActivationToggle }: CourseAct
           </Button>
           <Button
             variant={course.is_active ? "destructive" : "default"}
-            onClick={onActivationToggle}
-          >
+            onClick={() => {
+              onActivationToggle();
+              setDeactivateDialogOpen(false);
+            }}>
             {course.is_active ? "Archive" : "Activate"}
           </Button>
         </DialogFooter>
