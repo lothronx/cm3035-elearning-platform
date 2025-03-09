@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CourseMaterial, fetchCourseMaterials } from "@/utils/course-material-utils";
-import { MaterialCard } from "../../../components/courses/material-card";
-import { MaterialUploadDialog } from "../../../components/courses/material-upload-dialog";
+import { MaterialCard } from "./material-card";
+import { MaterialUploadDialog } from "./material-upload-dialog";
 
 interface CourseMaterialsProps {
   courseId: string;
@@ -31,7 +31,6 @@ export function CourseMaterials({ courseId, isCourseTeacher }: CourseMaterialsPr
 
   return (
     <Card className="overflow-hidden border-none bg-background-light shadow-sm transition-all duration-300 dark:bg-slate-900">
-
       {/* title and upload button */}
       <CardHeader className="px-8">
         <div className="flex items-center justify-between">

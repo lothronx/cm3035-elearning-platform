@@ -9,6 +9,7 @@ from .serializers import ChatMessageSerializer
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import json
+import datetime
 
 User = get_user_model()
 channel_layer = get_channel_layer()
@@ -55,6 +56,9 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
                 sender=partner, receiver=user, is_read=False
             ).exists()
 
+            # Add timestamp to sort by
+            timestamp = latest_message.timestamp if latest_message else None
+            
             chat_sessions.append(
                 {
                     "id": partner.id,
@@ -65,10 +69,22 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
                         else ""
                     ),
                     "is_unread": has_unread,
+                    "_timestamp": timestamp,  # Internal field for sorting
                 }
             )
+        
+        # Sort by timestamp (newest first) and remove the temporary _timestamp field
+        sorted_sessions = sorted(
+            chat_sessions, 
+            key=lambda x: x["_timestamp"] or datetime.datetime.min, 
+            reverse=True
+        )
+        
+        for session in sorted_sessions:
+            if "_timestamp" in session:
+                del session["_timestamp"]
 
-        return Response(chat_sessions)
+        return Response(sorted_sessions)
 
     def retrieve(self, request, pk=None):
         """GET /api/chat/{id}/ - Get chat messages with a specific user

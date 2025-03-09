@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CourseMaterials } from "@/app/courses/[id]/course-materials";
-import { CourseEnrollments } from "@/app/courses/[id]/course-enrollments";
-import { CourseFeedback } from "@/app/courses/[id]/course-feedback";
+import { CourseMaterials } from "@/components/courses/course-materials";
+import { CourseEnrollments } from "@/components/courses/course-enrollments";
+import { CourseFeedback } from "@/components/courses/course-feedback";
 import { FileText, Users, MessageSquare } from "lucide-react";
 
 interface CourseTabsProps {
@@ -26,7 +26,6 @@ export default function CourseTabs({
       value={activeTab}
       onValueChange={setActiveTab}
       className="w-full">
-
       {/* tabs */}
       <TabsList className="grid grid-cols-3 mb-2 w-full bg-background-light ">
         <TabsTrigger value="materials" className="flex items-center gap-2">

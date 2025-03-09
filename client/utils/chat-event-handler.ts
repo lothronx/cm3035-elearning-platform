@@ -1,5 +1,5 @@
 import { ChatSession, Message } from "@/types/chat";
-import { initializeChat } from "@/components/chat/chat-api";
+import { initializeChat } from "@/utils/chat-api";
 
 interface ChatEventHandlerProps {
   chatSessions: ChatSession[];

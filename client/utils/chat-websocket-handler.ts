@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { Message, ChatSession } from "@/types/chat";
-import { fetchChatHistory, fetchChatSessions } from "@/components/chat/chat-api";
+import { fetchChatHistory, fetchChatSessions } from "@/utils/chat-api";
 
 interface WebSocketHandlerProps {
   chatSocket: WebSocket | null;
@@ -89,11 +89,9 @@ export function setupWebSocketHandler({
     } else if (data.chat_id !== undefined && data.any_unread_sessions !== undefined) {
       // Ensure has_unread is always a boolean with default false
       const isUnread = data.has_unread === undefined ? false : data.has_unread;
-      
+
       setChatSessions((prev) =>
-        prev.map((session) =>
-          session.id === data.chat_id ? { ...session, isUnread } : session
-        )
+        prev.map((session) => (session.id === data.chat_id ? { ...session, isUnread } : session))
       );
       setHasUnread(data.any_unread_sessions);
     }
@@ -140,9 +138,9 @@ export function setupWebSocketHandler({
 
   const showMessageNotification = (message: ChatMessage) => {
     // Check if sender_name exists, otherwise use safer alternatives
-    const senderName = message.sender_name || 'User';
+    const senderName = message.sender_name || "User";
     const toastTitle = `New message from ${senderName}`;
-    
+
     let toastDescription = "";
 
     if (message.content?.trim().length > 0) {

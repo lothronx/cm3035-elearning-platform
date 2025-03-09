@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useUser } from "@/contexts/user-context";
 import { SearchBar } from "@/components/navbar/search-bar";
 import { NotificationMenu } from "@/components/navbar/notification";
-import { ChatBox } from "@/components/chat/chat-box";
+import { ChatBox } from "@/components/navbar/chat-box";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
