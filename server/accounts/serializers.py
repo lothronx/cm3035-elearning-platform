@@ -15,8 +15,6 @@ class UserSerializer(serializers.ModelSerializer):
             "status",
             "first_name",
             "last_name",
-            "is_active",
-            "date_joined",
         ]
         extra_kwargs = {
             "password": {"write_only": True},
@@ -25,6 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
         }
         read_only_fields = ["id", "date_joined", "is_active"]
 
+    # first name must be letters only, between 1 and 255 characters
     def validate_first_name(self, value):
         if not value:
             raise serializers.ValidationError("First name is required.")
@@ -36,6 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("First name should contain only letters.")
         return value
 
+    # last name must be letters only, between 1 and 255 characters
     def validate_last_name(self, value):
         if not value:
             raise serializers.ValidationError("Last name is required.")
@@ -47,6 +47,7 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Last name should contain only letters.")
         return value
 
+    # username must be letters, numbers, and _, between 6 and 255 characters
     def validate_username(self, value):
         if len(value) < 6:
             raise serializers.ValidationError(
@@ -62,6 +63,7 @@ class UserSerializer(serializers.ModelSerializer):
             )
         return value
 
+    # password must be letters, numbers, and special characters, between 8 and 255 characters
     def validate_password(self, value):
         if len(value) < 8:
             raise serializers.ValidationError(
@@ -84,6 +86,7 @@ class UserSerializer(serializers.ModelSerializer):
             )
         return value
 
+    # use password hasher
     def create(self, validated_data):
         user = User(**validated_data)
         user.set_password(validated_data["password"])

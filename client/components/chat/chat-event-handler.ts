@@ -1,24 +1,31 @@
-import { ChatSession } from "@/types/chat";
+import { ChatSession, Message } from "@/types/chat";
+import { initializeChat } from "@/components/chat/chat-api";
 
 interface ChatEventHandlerProps {
-  chatSocket: WebSocket | null;
   chatSessions: ChatSession[];
   setOpen: (open: boolean) => void;
   setActiveChatId: (id: number) => void;
-  setChatMessages: (messages: any[]) => void;
+  setChatMessages: (messages: Message[]) => void;
   handleSelectChat: (userId: number) => void;
 }
 
+interface OpenChatEvent extends CustomEvent {
+  detail: {
+    userId: number;
+    isNewChat: boolean;
+  };
+}
+
 export function setupChatEventHandler({
-  chatSocket,
   chatSessions,
   setOpen,
   setActiveChatId,
   setChatMessages,
   handleSelectChat,
 }: ChatEventHandlerProps) {
-  const handleOpenChat = (event: CustomEvent) => {
-    const { userId, isNewChat } = event.detail;
+  const handleOpenChat = async (event: Event) => {
+    const customEvent = event as OpenChatEvent;
+    const { userId, isNewChat } = customEvent.detail;
     setOpen(true);
 
     if (isNewChat) {
@@ -28,13 +35,11 @@ export function setupChatEventHandler({
         setActiveChatId(userId);
         setChatMessages([]);
 
-        if (chatSocket?.readyState === WebSocket.OPEN) {
-          chatSocket.send(
-            JSON.stringify({
-              type: "initialize_chat",
-              chat_id: userId,
-            })
-          );
+        // Initialize chat via API instead of WebSocket
+        try {
+          await initializeChat(userId);
+        } catch (error) {
+          console.error("Error initializing chat:", error);
         }
       } else {
         handleSelectChat(userId);
@@ -44,8 +49,8 @@ export function setupChatEventHandler({
     }
   };
 
-  window.addEventListener("openChat", handleOpenChat as EventListener);
-  return () => window.removeEventListener("openChat", handleOpenChat as EventListener);
+  window.addEventListener("openChat", handleOpenChat);
+  return () => window.removeEventListener("openChat", handleOpenChat);
 }
 
 export function setupWebSocketEvents(chatSocket: WebSocket | null) {

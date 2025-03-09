@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Message, ChatSession } from "@/types/chat";
 import { setupWebSocketHandler } from "@/components/chat/chat-websocket-handler";
 import { setupChatEventHandler, setupWebSocketEvents } from "@/components/chat/chat-event-handler";
-import { sendMessage, fetchChatHistory, fetchChatSessions } from "@/components/chat/chat-api";
+import { sendMessage, fetchChatHistory, fetchChatSessions, markChatAsRead } from "@/components/chat/chat-api";
 
 export interface ChatBoxProps {
   chatWidth?: number;
@@ -31,27 +31,14 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
       try {
         setActiveChatId(chatId);
 
-        if (chatSocket?.readyState === WebSocket.OPEN) {
-          chatSocket.send(
-            JSON.stringify({
-              type: "get_chat_history",
-              chat_id: chatId,
-            })
-          );
-        } else {
-          const messages = await fetchChatHistory(chatId);
-          setChatMessages(messages);
-        }
+        // Always fetch chat history from API
+        const messages = await fetchChatHistory(chatId);
+        setChatMessages(messages);
 
-        if (chatSocket?.readyState === WebSocket.OPEN) {
-          chatSocket.send(
-            JSON.stringify({
-              type: "mark_read",
-              chat_id: chatId,
-            })
-          );
-        }
+        // Mark messages as read via API
+        await markChatAsRead(chatId);
 
+        // Update UI state for unread messages
         setChatSessions((prev) =>
           prev.map((session) => (session.id === chatId ? { ...session, isUnread: false } : session))
         );
@@ -65,7 +52,7 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
         toast.error("Failed to load chat messages");
       }
     },
-    [chatSessions, chatSocket]
+    [chatSessions]
   );
 
   // Send a new message
@@ -78,38 +65,34 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
       }
 
       try {
-        if (file || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
-          const newMessage = await sendMessage(activeChatId, content, file);
+        // Show temporary message in the UI immediately
+        const tempMessage: Message = {
+          id: 9999999,
+          content: content,
+          isSender: true,
+          timestamp: new Date(),
+          file: null,
+        };
 
-          setChatMessages((prev) => [
-            ...prev,
-            {
-              id: newMessage.id,
-              content: newMessage.content,
-              isSender: true,
-              timestamp: new Date(newMessage.timestamp),
-              file: newMessage.file,
-            },
-          ]);
-        } else {
-          const tempMessage: Message = {
-            id: 9999999,
-            content: content,
-            isSender: true,
-            timestamp: new Date(),
-            file: null,
-          };
+        setChatMessages((prev) => [...prev, tempMessage]);
 
-          setChatMessages((prev) => [...prev, tempMessage]);
+        // Always send message via HTTP API
+        const newMessage = await sendMessage(activeChatId, content, file);
 
-          chatSocket.send(
-            JSON.stringify({
-              type: "send_message",
-              receiver_id: activeChatId,
-              content: content,
-            })
-          );
-        }
+        // Replace temp message with the actual message from the server
+        setChatMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === 9999999
+              ? {
+                  id: newMessage.id,
+                  content: newMessage.content,
+                  isSender: true,
+                  timestamp: new Date(newMessage.timestamp),
+                  file: newMessage.file,
+                }
+              : msg
+          )
+        );
 
         // Update chat session's last message
         setChatSessions((prev) =>
@@ -126,9 +109,12 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
       } catch (error) {
         console.error("Error sending message:", error);
         toast.error(error instanceof Error ? error.message : "Failed to send message");
+        
+        // Remove the temporary message on error
+        setChatMessages((prev) => prev.filter((msg) => msg.id !== 9999999));
       }
     },
-    [activeChatId, chatSocket]
+    [activeChatId]
   );
 
   // Function to view a chat when clicking on a notification
@@ -162,38 +148,30 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
   useEffect(() => {
     if (!isChatConnected) return;
 
-    if (chatSocket?.readyState === WebSocket.OPEN) {
-      chatSocket.send(
-        JSON.stringify({
-          type: "get_chat_sessions",
-        })
-      );
-    } else {
-      const loadChatSessions = async () => {
-        try {
-          const sessions = await fetchChatSessions();
-          setChatSessions(sessions);
-          setHasUnread(sessions.some((session) => session.isUnread));
-        } catch (error) {
-          console.error("Error fetching chat sessions:", error);
-          toast.error("Failed to load chat sessions");
-        }
-      };
-      loadChatSessions();
-    }
-  }, [isChatConnected, chatSocket]);
+    const loadChatSessions = async () => {
+      try {
+        const sessions = await fetchChatSessions();
+        setChatSessions(sessions);
+        setHasUnread(sessions.some((session) => session.isUnread));
+      } catch (error) {
+        console.error("Error fetching chat sessions:", error);
+        toast.error("Failed to load chat sessions");
+      }
+    };
+    loadChatSessions();
+
+  }, [isChatConnected]);
 
   // Listen for openChat events
   useEffect(() => {
     return setupChatEventHandler({
-      chatSocket,
       chatSessions,
       setOpen,
       setActiveChatId,
       setChatMessages,
       handleSelectChat,
     });
-  }, [handleSelectChat, chatSessions, chatSocket]);
+  }, [handleSelectChat, chatSessions]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

@@ -1,12 +1,17 @@
 from django.db.models import Q
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
 from .models import ChatMessage
 from .serializers import ChatMessageSerializer
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+import json
 
 User = get_user_model()
+channel_layer = get_channel_layer()
 
 
 class ChatMessageViewSet(viewsets.ModelViewSet):
@@ -136,6 +141,39 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
                     message.file = request.FILES["file"]
                     message.save()
 
+                # Format message data for WebSocket
+                sender_name = request.user.get_full_name() or request.user.username
+                file_data = None
+                if message.file and message.file.name:
+                    file_data = {
+                        "id": message.id,
+                        "title": message.file.name.split("/")[-1],
+                        "url": message.file.url,
+                    }
+                
+                message_data = {
+                    "id": message.id,
+                    "sender_id": request.user.id,
+                    "sender_name": sender_name,
+                    "receiver_id": receiver.id,
+                    "content": message.content,
+                    "timestamp": message.timestamp.isoformat(),
+                    "file": file_data,
+                }
+                
+                # Send notification to receiver's WebSocket
+                async_to_sync(channel_layer.group_send)(
+                    f"user_{receiver_id}_chat",
+                    {"type": "chat_message_notification", "message": message_data},
+                )
+                
+                # Notify both sender and receiver to refresh their chat sessions
+                for user_id in [request.user.id, receiver_id]:
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_{user_id}_chat",
+                        {"type": "chat_sessions_updated"},
+                    )
+
                 return Response(
                     self.get_serializer(message, context={"request": request}).data,
                     status=status.HTTP_201_CREATED,
@@ -145,4 +183,113 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response(
                 {"error": "Receiver not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(methods=["post"], detail=True)
+    def mark_as_read(self, request, pk=None):
+        """POST /api/chat/{id}/mark_as_read/ - Mark a message as read"""
+        try:
+            message = ChatMessage.objects.get(id=pk)
+            if message.receiver == request.user:
+                message.is_read = True
+                message.save()
+                return Response({"message": "Message marked as read"})
+            else:
+                return Response(
+                    {"error": "You are not the receiver of this message"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+        except ChatMessage.DoesNotExist:
+            return Response(
+                {"error": "Message not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(methods=["post"], detail=False)
+    def mark_chat_read(self, request):
+        """POST /api/chat/mark_chat_read/ - Mark all messages from a specific user as read"""
+        try:
+            chat_id = request.data.get("chat_id")
+            if not chat_id:
+                return Response(
+                    {"error": "chat_id is required"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+            # Get the other user
+            try:
+                other_user = User.objects.get(id=chat_id)
+            except User.DoesNotExist:
+                return Response(
+                    {"error": "User not found"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+                
+            # Mark all messages from the other user as read
+            unread_messages = ChatMessage.objects.filter(
+                sender=other_user, receiver=request.user, is_read=False
+            )
+            unread_messages.update(is_read=True)
+            
+            # Check if there are any unread messages left from any sender
+            any_unread_sessions = ChatMessage.objects.filter(
+                receiver=request.user, is_read=False
+            ).exists()
+            
+            # Send WebSocket notification about read status update
+            async_to_sync(channel_layer.group_send)(
+                f"user_{request.user.id}_chat",
+                {
+                    "type": "chat_message", 
+                    "message": {
+                        "type": "read_status_update",
+                        "chat_id": chat_id,
+                        "has_unread": False,
+                        "all_read": not any_unread_sessions,
+                        "any_unread_sessions": any_unread_sessions,
+                    }
+                }
+            )
+            
+            return Response({
+                "message": "All messages marked as read",
+                "any_unread_sessions": any_unread_sessions
+            })
+            
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            
+    @action(methods=["post"], detail=False)
+    def initialize(self, request):
+        """POST /api/chat/initialize/ - Initialize a chat with a specific user"""
+        try:
+            chat_id = request.data.get("chat_id")
+            if not chat_id:
+                return Response(
+                    {"error": "chat_id is required"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+                
+            # Check if user exists
+            try:
+                chat_partner = User.objects.get(id=chat_id)
+            except User.DoesNotExist:
+                return Response(
+                    {"error": "User not found"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+                
+            # Return success - no need to create any records yet,
+            # actual messages will be created when the user sends something
+            return Response({
+                "id": chat_partner.id,
+                "name": chat_partner.get_full_name() or chat_partner.username,
+            })
+            
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

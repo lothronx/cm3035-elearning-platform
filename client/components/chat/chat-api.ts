@@ -70,3 +70,33 @@ export async function fetchChatSessions(): Promise<ChatSession[]> {
     isUnread: session.is_unread,
   }));
 }
+
+export async function markChatAsRead(chatId: number): Promise<void> {
+  const response = await fetchWithAuth(`${API_URL}/api/chat/mark_chat_read/`, {
+    method: "POST",
+    body: JSON.stringify({ chat_id: chatId }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to mark chat as read");
+  }
+}
+
+export async function initializeChat(chatId: number): Promise<void> {
+  const response = await fetchWithAuth(`${API_URL}/api/chat/initialize/`, {
+    method: "POST",
+    body: JSON.stringify({ chat_id: chatId }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to initialize chat");
+  }
+}
