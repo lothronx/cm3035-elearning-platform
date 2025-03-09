@@ -12,39 +12,54 @@ from notifications.services import (
 
 class StudentEnrollmentViewSet(viewsets.ViewSet):
     """
-    ViewSet for students to manage their own course enrollments:
-    - POST /courses/{course_id}/student-enrollment/: Student can enroll in a course
-    - DELETE /courses/{course_id}/student-enrollment/: Student can unenroll from a course
+    ViewSet for handling student course enrollment operations.
+
+    Provides endpoints for:
+    - Enrolling in a course
+    - Unenrolling from a course
+
+    Requires authentication and student permissions.
     """
 
     permission_classes = [IsAuthenticated, IsStudent]
 
     def create(self, request, course_pk=None):
-        """Handle enrollment creation"""
+        """
+        Enroll the authenticated student in a course.
+
+        Args:
+            request: The HTTP request object
+            course_pk: Primary key of the course to enroll in
+
+        Returns:
+            Response: HTTP response with enrollment status
+                     or error message
+        """
         try:
+            # Retrieve the course object
             course = Course.objects.get(pk=course_pk)
 
-            # Check if course is active
+            # Validate course is active
             if not course.is_active:
                 return Response(
                     {"error": "Cannot enroll in an inactive course"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # Check if student is already enrolled
+            # Check for existing enrollment
             if Enrollment.objects.filter(course=course, student=request.user).exists():
                 return Response(
                     {"error": "Already enrolled in this course"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # Create enrollment
+            # Create new enrollment
             enrollment = Enrollment.objects.create(
                 course=course,
                 student=request.user,
             )
 
-            # Send notification to the teacher
+            # Notify teacher about new enrollment
             create_course_enrollment_notification(enrollment)
 
             return Response(
@@ -62,19 +77,30 @@ class StudentEnrollmentViewSet(viewsets.ViewSet):
             )
 
     def delete(self, request, course_pk=None):
-        """Handle unenrollment"""
+        """
+        Unenroll the authenticated student from a course.
+
+        Args:
+            request: The HTTP request object
+            course_pk: Primary key of the course to unenroll from
+
+        Returns:
+            Response: HTTP response with unenrollment status
+                     or error message
+        """
         try:
+            # Retrieve and delete the enrollment
             enrollment = Enrollment.objects.get(
                 course_id=course_pk, student=request.user
             )
 
-            # Get course before deleting enrollment
+            # Store course and student details for notification
             course = enrollment.course
             student = request.user
 
             enrollment.delete()
 
-            # Send notification to the teacher about student leaving
+            # Notify teacher about unenrollment
             create_course_unenrollment_notification(course, student)
 
             return Response(

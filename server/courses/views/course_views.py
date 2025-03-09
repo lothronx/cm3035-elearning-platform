@@ -15,12 +15,16 @@ from api.permissions import IsTeacher, IsCourseTeacher
 
 class CourseViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for managing courses with different permission levels based on user roles:
-    - GET /courses/: All authenticated users can view active courses
-    - POST /courses/: Only teachers can create courses
-    - GET /courses/{id}/: All authenticated users can view active courses, only course teachers can view inactive
-    - PATCH /courses/{id}/: Only the course teacher can update
-    - PATCH /courses/{id}/toggle_activation/: Only the course teacher can toggle activation
+    API endpoint for managing courses.
+
+    Supports CRUD operations for courses with additional custom actions:
+    - toggle_activation: Activate/deactivate a course
+    - search: Search for courses by title
+
+    Permissions:
+    - List/Retrieve: Authenticated users
+    - Create: Authenticated teachers
+    - Update/Delete: Authenticated course teachers
     """
 
     serializer_class = CourseSerializer
@@ -28,8 +32,10 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Return appropriate queryset based on user role and request method:
-        - Exclude superusers and staff users from results
+        Return appropriate queryset based on user role and request method.
+
+        Returns:
+            QuerySet: Filtered courses excluding admin users
         """
         # Base queryset excluding admin users
         base_queryset = Course.objects.exclude(
@@ -40,20 +46,23 @@ class CourseViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             return base_queryset.filter(is_active=True)
 
-        # For retrieve/update, handle permissions in get_object
         return base_queryset
 
     def get_object(self):
         """
-        Override get_object to enforce permissions:
-        - Teachers can access their own courses (active or inactive)
-        - Other users can only access active courses
+        Override get_object to enforce permissions.
+
+        Returns:
+            Course: The requested course object
+
+        Raises:
+            PermissionDenied: If user tries to access inactive course they don't teach
         """
         obj = super().get_object()
         user = self.request.user
 
         # Only course teacher can access inactive courses
-        if not obj.is_active and (user.role != "teacher" or obj.teacher != user):
+        if not obj.is_active and obj.teacher != user:
             self.permission_denied(
                 self.request,
                 message="You do not have permission to access this inactive course.",
@@ -63,7 +72,12 @@ class CourseViewSet(viewsets.ModelViewSet):
         return obj
 
     def get_serializer_class(self):
-        """Return appropriate serializer based on the request method and action"""
+        """
+        Return appropriate serializer based on the request method and action.
+
+        Returns:
+            Serializer: The appropriate serializer class
+        """
         if self.action == "list":
             return CourseListSerializer
         elif self.action == "retrieve":
@@ -72,10 +86,10 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """
-        Set permissions based on action:
-        - list, retrieve: IsAuthenticated
-        - create: IsAuthenticated & IsTeacher
-        - update, partial_update, destroy: IsAuthenticated & IsCourseTeacher
+        Set permissions based on action type.
+
+        Returns:
+            list: Appropriate permission classes for the current action
         """
         if self.action == "create":
             self.permission_classes = [IsAuthenticated, IsTeacher]
@@ -87,15 +101,23 @@ class CourseViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
-        """Assign the current user as the teacher when creating a course"""
+        """
+        Create new course with current user as teacher.
+
+        Args:
+            serializer (CourseSerializer): Validated serializer instance
+        """
         serializer.save(teacher=self.request.user)
 
     def partial_update(self, request, *args, **kwargs):
         """
-        Handle PATCH requests to update course details (title, description).
-        Only the course teacher can perform this action.
+        Handle PATCH requests to update course details.
+
+        Returns:
+            Response: Updated course data with detailed serializer
         """
         course = self.get_object()
+
         serializer = self.get_serializer(course, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -103,7 +125,6 @@ class CourseViewSet(viewsets.ModelViewSet):
         # Use CourseDetailSerializer to include all necessary fields for frontend
         detail_serializer = CourseDetailSerializer(course, context={"request": request})
 
-        # Return the updated course data
         return Response(detail_serializer.data, status=status.HTTP_200_OK)
 
     @action(
@@ -112,7 +133,12 @@ class CourseViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated, IsCourseTeacher],
     )
     def toggle_activation(self, request, pk=None):
-        """Toggle the activation status of a course. Only the course teacher can perform this action."""
+        """
+        Toggle the activation status of a course.
+
+        Returns:
+            Response: JSON response with new activation status
+        """
         course = self.get_object()
 
         course.is_active = not course.is_active
@@ -129,8 +155,12 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
     def search(self, request):
-        
+        """
+        Search for courses by title.
 
+        Returns:
+            Response: List of matching courses with limited fields
+        """
         query = request.query_params.get("q", "")
         if not query:
             return Response(
@@ -138,6 +168,7 @@ class CourseViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Search for courses matching query, including inactive courses for teachers
         queryset = (
             Course.objects.filter(Q(title__icontains=query))
             .filter(Q(is_active=True) | Q(teacher=request.user))
@@ -146,14 +177,13 @@ class CourseViewSet(viewsets.ModelViewSet):
         )
 
         # Return only specified fields
-        course_data = []
-        for course in queryset:
-            course_data.append(
-                {
-                    "id": course.id,
-                    "title": course.title,
-                    "description": course.description,
-                    "is_active": course.is_active,
-                }
-            )
+        course_data = [
+            {
+                "id": course.id,
+                "title": course.title,
+                "description": course.description,
+                "is_active": course.is_active,
+            }
+            for course in queryset
+        ]
         return Response(course_data)

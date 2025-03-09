@@ -32,13 +32,16 @@ class IsCourseTeacher(permissions.BasePermission):
             return False
 
         # For detail views (update, delete), we need to check the course ID from the URL
-        if view.action in ['update', 'partial_update', 'destroy'] and 'pk' in view.kwargs:
-            course_pk = view.kwargs.get('pk')
+        if (
+            view.action in ["update", "partial_update", "destroy"]
+            and "pk" in view.kwargs
+        ):
+            course_pk = view.kwargs.get("pk")
             if not course_pk:
                 return False
             # Check if user is the teacher of this course
             return Course.objects.filter(id=course_pk, teacher=request.user).exists()
-            
+
         # For nested views, get course_pk from URL parameters
         course_pk = view.kwargs.get("course_pk")
         if not course_pk:
@@ -51,7 +54,7 @@ class IsCourseTeacher(permissions.BasePermission):
         # Basic authentication and role check
         if not request.user.is_authenticated or request.user.role != "teacher":
             return False
-            
+
         # Works with Course objects or objects with a course attribute
         if isinstance(obj, Course):
             return obj.teacher.id == request.user.id

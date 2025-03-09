@@ -10,9 +10,15 @@ from api.permissions import IsCourseTeacher, IsCourseTeacherOrEnrolledStudent
 
 class EnrollmentViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for managing course enrollments with different permission levels:
-    - GET /courses/{course_id}/enrollments/: Course teacher and enrolled students can view enrollments
-    - DELETE /courses/{course_id}/enrollments/: Only course teacher can bulk delete enrollments
+    API endpoint for managing course enrollments.
+
+    Supports:
+    - Viewing enrollments for a specific course
+    - Bulk deletion of enrollments
+
+    Permissions:
+    - List/Retrieve: Authenticated users who are either teachers or enrolled students
+    - Delete: Authenticated course teachers only
     """
 
     serializer_class = EnrollmentSerializer
@@ -20,18 +26,23 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "delete"]
 
     def get_queryset(self):
-        """Return enrollments for the specified course, excluding admin users"""
+        """
+        Return enrollments for the specified course.
+
+        Returns:
+            QuerySet: Filtered enrollments excluding admin users
+        """
         course_pk = self.kwargs.get("course_pk")
-        # Exclude admin users from enrollment list
         return Enrollment.objects.filter(course_id=course_pk).exclude(
             Q(student__is_superuser=True) | Q(student__is_staff=True)
         ).order_by("-enrolled_at")
 
     def get_permissions(self):
         """
-        Set permissions based on action:
-        - list, retrieve: IsAuthenticated & IsCourseTeacherOrEnrolledStudent
-        - destroy: IsAuthenticated & IsCourseTeacher
+        Set permissions based on action type.
+
+        Returns:
+            list: Appropriate permission classes for the current action
         """
         if self.action in ["list", "retrieve"]:
             self.permission_classes = [IsAuthenticated, IsCourseTeacherOrEnrolledStudent]
@@ -41,7 +52,15 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def delete(self, request, *args, **kwargs):
-        """Handle bulk deletion of enrollments"""
+        """
+        Handle bulk deletion of enrollments.
+
+        Args:
+            request: The HTTP request containing student_ids in the body
+
+        Returns:
+            Response: JSON response with deletion status
+        """
         course_pk = self.kwargs.get("course_pk")
         student_ids = request.data.get("student_ids", [])
 
@@ -67,7 +86,12 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
         )
 
     def get_serializer_context(self):
-        """Add request to serializer context"""
+        """
+        Add request to serializer context.
+
+        Returns:
+            dict: Serializer context with request object
+        """
         context = super().get_serializer_context()
         context["request"] = self.request
         return context
