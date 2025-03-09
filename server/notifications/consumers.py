@@ -1,5 +1,13 @@
+"""
+Notification Consumers
+=====================
+
+This module contains WebSocket consumers for handling real-time notifications.
+"""
+
 import json
 import logging
+from typing import Optional
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
@@ -11,12 +19,31 @@ logger = logging.getLogger(__name__)
 
 
 class NotificationConsumer(AsyncWebsocketConsumer):
+    """
+    WebSocket consumer for handling real-time notifications.
+
+    Handles:
+    - Authentication via JWT tokens
+    - Group management for user-specific notifications
+    - Receiving and broadcasting notifications
+    """
+
     def __init__(self, *args, **kwargs):
+        """Initialize the consumer with empty user and group name."""
         super().__init__(*args, **kwargs)
-        self.user = None
-        self.group_name = None
+        self.user: Optional[User] = None
+        self.group_name: Optional[str] = None
 
     async def connect(self):
+        """
+        Handle WebSocket connection.
+
+        Steps:
+        1. Accept the connection
+        2. Extract and validate JWT token from query parameters
+        3. Add user to their notification group
+        4. Send connection confirmation
+        """
         # Accept the connection first
         await self.accept()
 
@@ -74,6 +101,12 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             logger.error("Error processing token: %s", str(e))
 
     async def disconnect(self, close_code):
+        """
+        Handle WebSocket disconnection.
+
+        Args:
+            close_code: The WebSocket close code
+        """
         # Log disconnection
         logger.info("WebSocket disconnected with code: %s", close_code)
 
@@ -81,8 +114,14 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         if hasattr(self, "group_name") and self.group_name:
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
-    # Receive message from WebSocket
     async def receive(self, text_data, bytes_data=None):
+        """
+        Handle incoming WebSocket messages.
+
+        Args:
+            text_data: The received text data
+            bytes_data: The received binary data (not used)
+        """
         try:
             # Parse the received JSON data
             text_data_json = json.loads(text_data)
@@ -91,8 +130,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             logger.error("Error processing message: %s", str(e))
 
-    # Receive message from group
     async def notification_message(self, event):
+        """
+        Handle notification messages from the group.
+
+        Args:
+            event: The event containing notification data
+        """
         try:
             message_content = event.get("message", "")
             notification_id = event.get("notification_id")

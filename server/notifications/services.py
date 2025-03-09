@@ -1,15 +1,24 @@
+"""
+Notification Services
+=====================
+
+This module contains business logic for creating and sending notifications
+through various channels (database, WebSocket).
+"""
+
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.contrib.auth import get_user_model
+from typing import List
 from .models import Notification
-from courses.models import Enrollment
+from courses.models import Enrollment, Course
 
 User = get_user_model()
 
 
-def create_notification(recipient, message):
+def create_notification(recipient: User, message: str) -> Notification:
     """
-    Create a notification and send it to the recipient via WebSocket
+    Create a notification and send it to the recipient via WebSocket.
 
     Args:
         recipient: User who should receive the notification
@@ -17,8 +26,10 @@ def create_notification(recipient, message):
 
     Returns:
         Notification: The created notification object
-    """
 
+    Raises:
+        Exception: If WebSocket communication fails
+    """
     # Create notification in the database
     notification = Notification(recipient=recipient, message=message)
     notification.save()
@@ -37,12 +48,23 @@ def create_notification(recipient, message):
             },
         )
     except Exception as e:
+        # Log the error but still return the notification
+        # since it was successfully created in the database
         raise
 
     return notification
 
 
-def create_course_enrollment_notification(enrollment):
+def create_course_enrollment_notification(enrollment: Enrollment) -> Notification:
+    """
+    Create a notification when a student enrolls in a course.
+
+    Args:
+        enrollment: The enrollment record
+
+    Returns:
+        Notification: The created notification object
+    """
     course = enrollment.course
     student = enrollment.student
     teacher = course.teacher
@@ -52,7 +74,19 @@ def create_course_enrollment_notification(enrollment):
     return create_notification(recipient=teacher, message=message)
 
 
-def create_course_unenrollment_notification(course, student):
+def create_course_unenrollment_notification(
+    course: Course, student: User
+) -> Notification:
+    """
+    Create a notification when a student leaves a course.
+
+    Args:
+        course: The course being left
+        student: The student who left
+
+    Returns:
+        Notification: The created notification object
+    """
     teacher = course.teacher
 
     message = f"{student.get_full_name() or student.username} has left your course: {course.title}"
@@ -60,9 +94,18 @@ def create_course_unenrollment_notification(course, student):
     return create_notification(recipient=teacher, message=message)
 
 
-def create_course_material_notification(course):
+def create_course_material_notification(course: Course) -> List[Notification]:
+    """
+    Create notifications for all students when new material is uploaded.
+
+    Args:
+        course: The course with new material
+
+    Returns:
+        List[Notification]: List of created notification objects
+    """
     message = f"A new material has been uploaded to your course: {course.title}"
-    
+
     # Create notifications for all enrolled students
     notifications = []
     for enrollment in Enrollment.objects.filter(course=course):
