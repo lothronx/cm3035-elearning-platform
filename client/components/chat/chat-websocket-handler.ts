@@ -139,7 +139,10 @@ export function setupWebSocketHandler({
   };
 
   const showMessageNotification = (message: ChatMessage) => {
-    const toastTitle = `New message from ${message.sender_name}`;
+    // Check if sender_name exists, otherwise use safer alternatives
+    const senderName = message.sender_name || 'User';
+    const toastTitle = `New message from ${senderName}`;
+    
     let toastDescription = "";
 
     if (message.content?.trim().length > 0) {
@@ -151,13 +154,16 @@ export function setupWebSocketHandler({
       toastDescription = "New message";
     }
 
-    toast(toastTitle, {
-      description: toastDescription,
-      action: {
-        label: "View",
-        onClick: () => viewChatFromNotification(message.sender_id),
-      },
-    });
+    // Only show notification if we have a valid sender_id
+    if (message.sender_id) {
+      toast(toastTitle, {
+        description: toastDescription,
+        action: {
+          label: "View",
+          onClick: () => viewChatFromNotification(message.sender_id),
+        },
+      });
+    }
   };
 
   chatSocket.addEventListener("message", handleMessage);
