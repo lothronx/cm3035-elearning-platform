@@ -4,19 +4,16 @@ import type React from "react";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { handleUnauthorized } from "@/lib/auth";
 import { useUser } from "@/contexts/user-context";
 import { SearchBar } from "@/components/navbar/search-bar";
 import { NotificationMenu } from "@/components/navbar/notification";
 import { ChatBox } from "@/components/navbar/chat-box";
 
 export function Navbar() {
-  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
-  const { user } = useUser();
+  const { user, logout } = useUser();
 
   // Add scroll effect to navbar
   useEffect(() => {
@@ -30,6 +27,7 @@ export function Navbar() {
 
   const handleLogout = async () => {
     try {
+      // Call the API to logout on the server side
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout/`, {
         method: "POST",
         headers: {
@@ -39,9 +37,12 @@ export function Navbar() {
         body: JSON.stringify({ refresh: localStorage.getItem("refreshToken") }),
       });
 
-      handleUnauthorized(router);
+      // Use the logout function from user context to properly handle state cleanup
+      logout();
     } catch (error) {
       console.error("Logout failed:", error);
+      // Even if the API call fails, we should still logout on the client side
+      logout();
     }
   };
 

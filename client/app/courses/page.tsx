@@ -4,7 +4,6 @@ import { Toaster, toast } from "sonner";
 import { Navbar } from "@/components/navbar/navbar";
 import { CourseCard } from "@/components/courses/course-card";
 import { useEffect, useState } from "react";
-import { ChatBox } from "@/components/navbar/chat-box";
 import { useRouter } from "next/navigation";
 import { handleUnauthorized, fetchWithAuth, checkAuthStatus } from "@/lib/auth";
 import { handleEnroll } from "@/utils/course-utils";

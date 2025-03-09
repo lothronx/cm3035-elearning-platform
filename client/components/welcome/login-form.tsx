@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useUser } from "@/contexts/user-context";
 
 export function LoginForm() {
   const router = useRouter();
+  const { refreshUserData } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
@@ -43,6 +45,11 @@ export function LoginForm() {
       const data = await response.json();
       localStorage.setItem("accessToken", data.access);
       localStorage.setItem("refreshToken", data.refresh);
+      
+      // Refresh the user context with the new user data
+      await refreshUserData();
+      
+      // Navigate to dashboard after context is updated
       router.push("/dashboard");
     } catch (error) {
       toast.error("Failed to login. Please check your credentials.");

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/contexts/user-context";
 
 // Define validation schema with Zod
 const registerSchema = z
@@ -65,6 +66,7 @@ type FormErrors = {
 
 export function RegisterForm() {
   const router = useRouter();
+  const { refreshUserData } = useUser();
 
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -186,6 +188,11 @@ export function RegisterForm() {
 
       localStorage.setItem("accessToken", data.access);
       localStorage.setItem("refreshToken", data.refresh);
+      
+      // Refresh the user context with the new user data
+      await refreshUserData();
+      
+      // Navigate to dashboard after context is updated
       router.push("/dashboard");
     } catch (error) {
       console.error(error);
