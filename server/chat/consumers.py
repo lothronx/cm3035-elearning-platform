@@ -80,9 +80,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message = await self.save_message(receiver_id, content)
             if message:
                 # Send to receiver's group
+                # For the receiver, set isSender to False
+                receiver_message = message.copy()
+                receiver_message["isSender"] = False
+                
                 await self.channel_layer.group_send(
                     f"user_{receiver_id}_chat",
-                    {"type": "chat_message", "message": message},
+                    {"type": "chat_message", "message": receiver_message},
                 )
 
                 # Send notification
@@ -109,13 +113,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 sender=self.user, receiver=receiver, content=content
             )
 
+            # Create a chat_id using user ids to match API format
+            # This should be the same logic used by the API to determine chat ID
+            chat_id = receiver_id  # Assuming chat_id is the other user's ID
+            
             return {
                 "id": message.id,
                 "sender_id": self.user.id,
                 "sender_name": self.user.get_full_name() or self.user.username,
                 "receiver_id": receiver.id,
+                "chat_id": chat_id,  # Add chat_id field
+                "isSender": True,     # Add isSender field for sender
                 "content": content,
                 "timestamp": message.timestamp.isoformat(),
+                "file": {            # Add file structure to match API format
+                    "id": None,
+                    "type": None, 
+                    "title": None,
+                    "url": None
+                }
             }
         except User.DoesNotExist:
             logger.error(f"Receiver {receiver_id} not found")

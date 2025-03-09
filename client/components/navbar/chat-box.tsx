@@ -91,6 +91,20 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
           },
         ]);
 
+        // Send message via WebSocket if connected (for real-time delivery to receiver)
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+          chatSocket.send(
+            JSON.stringify({
+              type: "chat_message",
+              receiver_id: activeChatId,
+              content: content || "",
+            })
+          );
+          console.log("Message sent via WebSocket");
+        } else {
+          console.log("WebSocket not connected, message sent only via API");
+        }
+
         // Update chat session's last message
         setChatSessions((prev) =>
           prev.map((session) => {
@@ -108,7 +122,7 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
         toast.error(error instanceof Error ? error.message : "Failed to send message");
       }
     },
-    [activeChatId]
+    [activeChatId, chatSocket]
   );
 
   // Handle incoming WebSocket messages
@@ -117,42 +131,65 @@ export function ChatBox({ chatWidth = 600, chatHeight = 500 }: ChatBoxProps) {
 
     const handleMessage = (event: MessageEvent) => {
       const data = JSON.parse(event.data);
+      console.log("WebSocket message received:", data);
 
       if (data.type === "chat_message") {
         const message = data.message;
+        console.log("Chat message received:", message);
+
         // Add message to current chat if it's active
-        if (message.chat_id === activeChatId) {
-          const newMessage: ChatMessageResponse = message;
-          setChatMessages((prev) => [
-            ...prev,
-            {
-              id: newMessage.id,
-              content: newMessage.content,
-              isSender: newMessage.isSender,
-              timestamp: new Date(newMessage.timestamp),
-              file: newMessage.file,
-            },
-          ]);
+        if (message.sender_id === activeChatId || message.receiver_id === activeChatId) {
+          const newMessage: Message = {
+            id: message.id,
+            content: message.content,
+            isSender: false, // It's a received message
+            timestamp: new Date(message.timestamp),
+            file: message.file && message.file.id ? message.file : null,
+          };
+
+          setChatMessages((prev) => [...prev, newMessage]);
         }
+
         // Update chat session's last message and unread status
         setChatSessions((prev) =>
           prev.map((session) => {
-            if (session.id === message.chat_id) {
-              const isCurrentChat = session.id == activeChatId;
-              if (isCurrentChat) setHasUnread(true);
+            if (session.id === message.sender_id) {
+              const isCurrentChat = session.id === activeChatId && open;
               return {
                 ...session,
+                lastMessage: message.content || "New message",
+                isUnread: !isCurrentChat, // Mark as unread if not the current chat or if chat box is closed
               };
             }
             return session;
           })
         );
+
+        // If not the active chat or if chat box is closed, show unread indicator
+        if (message.sender_id !== activeChatId || !open) {
+          setHasUnread(true);
+        }
+
+        // Show toast notification for new message
+        toast(`New message from ${message.sender_name}`, {
+          description:
+            message.content.length > 30
+              ? `${message.content.substring(0, 30)}...`
+              : message.content,
+          action: {
+            label: "View",
+            onClick: () => {
+              setOpen(true);
+              handleSelectChat(message.sender_id);
+            },
+          },
+        });
       }
     };
 
     chatSocket.addEventListener("message", handleMessage);
     return () => chatSocket.removeEventListener("message", handleMessage);
-  }, [chatSocket, activeChatId]);
+  }, [chatSocket, activeChatId, handleSelectChat, open]);
 
   // Fetch chat sessions when connected
   useEffect(() => {
