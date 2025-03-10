@@ -16,27 +16,240 @@ Demonstrate mastery of Django, Celery, Django Channels, authentication, and data
 
 ## 2. Application Design and Implementation
 
-## 2.1 Database Schema
+### 2.1 Module and database design
 
-Models and Relationships :
-Describe User (custom user model), Student, Teacher, Course, Enrollment, Feedback, StatusUpdate, CourseMaterial, and ChatMessage models.
-Include an ER diagram (e.g., using draw.io ) to visualize relationships.
-Normalization : Explain how you avoided redundancy (e.g., separating CourseMaterial from Course).
+After analyzing the project requirements, I first designed the database models and then decided to structure my e-learning platform using a modular architecture with five distinct modules. This approach helped me maintain separation of concerns and made the codebase more maintainable.
 
-## 2.2 User Authentication and Permissions
+#### Modular Architecture Design
 
-How users register/login (Django’s built-in auth + custom roles).
-Role-based access control:
-Teachers can create courses, view enrolled students, and block users.
-Students can enroll in courses, leave feedback, and post status updates.
+I organized my application into five core modules, each with a specific responsibility:
 
-## 2.3 REST API
+**1. Accounts Module**
+
+I extended Django's `AbstractUser` to leverage its built-in security features while adding my own role-based functionality. I created two roles: `student` and `teacher`, and enforced permission checks throughout the application. This approach maintains compatibility with Django's admin interface and leaves room for future authentication extensions like OAuth or SSO without requiring major refactoring.
+
+**2. Courses Module**
+
+For course management, I created 4 models: `Course`, `CourseMaterial`, `Enrollment`, and `Feedback`. I implemented normalized relationships to enable bidirectional querying (for example, finding all students in a course or all courses a student is enrolled in). I also added an `is_active` flag for soft deletion, which preserves historical data and prevents accidental data loss. The detailed timestamps I included help with tracking creation, updates, and user progress.
+
+**3. Notifications Module**
+
+I kept the notification system simple but effective, focusing on essential attributes like recipient, message, read status, and timestamp. This lightweight implementation reduces database overhead while still providing the flexibility to accommodate various notification types. The read status tracking enables unread notification tracking, which improves the user experience.
+
+**4. Chat Module**
+
+I implemented a chat system that supports both text messages and file attachments, with utility methods directly on the model for common operations. I added database indexes to optimize performance for frequent queries and implemented read status tracking to support notification features. By encapsulating complex query logic within model methods like `get_chat_messages` and `get_chat_sessions`, I reduced code duplication across the application.
+
+**5. API Module**
+
+I centralized all API endpoints in a single location using a hierarchical routing structure with nested routers. This approach provides a clear overview of all available endpoints, simplifies API documentation, and enforces consistent URL patterns across the application. The hierarchical structure reflects the natural relationships between resources and reduces code duplication.
+
+#### Database Design Patterns
+
+![ERD](ERD.jpg)
+
+Throughout my database design, I applied several key patterns:
+
+**- User Model Extension**
+
+By extending Django's built-in authentication, I maintained native security features while adding only the essential custom fields I needed.
+
+**- Normalized Relationships**
+
+I created junction tables like Enrollment for many-to-many relationships and used descriptive related_name attributes for all relationships, which improves code readability and query capabilities.
+
+**- File Management System**
+
+I separated upload directories by content type (profile photos, course materials, chat files) to prevent namespace collisions and enable type-specific security policies.
+
+**- Soft Delete Implementation**
+
+Instead of permanent deletion, I added is_active flags to key models, which preserves historical data and enables data recovery if needed.
+
+**- Metadata Tracking**
+
+I added timestamp fields with automatic updates, which supports chronological sorting, activity tracking, and user progress monitoring.
+
+**- Performance Optimization**
+
+I strategically added database indexes on frequently queried fields and implemented model methods for common complex queries to improve performance and maintainability.
+
+This modular architecture and thoughtful database design created a robust foundation for my e-learning platform, balancing performance, maintainability, and extensibility. The clear separation of concerns between modules and the consistent application of database design patterns allowed me to build a sophisticated web application that meets all the project requirements.
+
+### 2.2 User Authentication and Permissions
+
+The second thing I did is to implement the user authentication and permissions.
+
+#### Security and Access Control
+
+I ensured that only authenticated users can access the e-learning platform content.
+
+I used JWT to verify user identity across the platform. By using token-based authentication with refresh capabilities, I ensured that users maintain secure sessions while minimizing database queries.
+
+#### Role-Based Access Control
+
+Based on project requirements and common sense, I designed a role-based permission system that differentiates between teachers and students, ensuring each user type has appropriate access rights:
+
+In `server/api/permissions.py` I implemented five custom permission classes to enforce fine-grained access control throughout the e-learning platform:
+
+**1. IsTeacher Permission**
+
+This permission class restricts access to teacher-specific functionality. It performs a dual verification by checking both authentication status and role assignment:
+
+**2. IsStudent Permission**
+
+Similar to the teacher permission, this class restricts access to student-specific functionality. This permission is used for features that should only be available to students, such as enrollment functionality or student dashboards, preventing teachers from accessing student-only features.
+
+**3. IsCourseTeacher Permission**
+
+This permission class enforces course ownership, ensuring that teachers can only modify courses they've created. The class handles both direct course access and nested resource access (like course materials) by checking URL parameters. It also implements object-level permissions to verify ownership at the instance level, working with both Course objects and related objects that have a course attribute.
+
+**4. IsEnrolledStudent Permission**
+
+This permission class ensures that students can only access course material and related resources after they're enrolled in. Like the IsCourseTeacher permission, it implements both view-level and object-level permission checks, verifying enrollment status through database queries. This prevents students from accessing courses they haven't enrolled in, maintaining course privacy and access control.
+
+**5. IsCourseTeacherOrEnrolledStudent Permission**
+
+This hybrid permission class implements role-based access control with different permission levels. It grants full access to course teachers while limiting enrolled students to read-only operations (GET, HEAD, OPTIONS). This allows course materials to be viewable by enrolled students but only modifiable by the teacher who created them, implementing a practical read/write permission model.
+
+These permission classes work together to create a security system that enforces role-based access control, resource ownership, and enrollment status throughout the application. By combining these permissions in different views, I created a flexible yet secure authorization system that protects sensitive data while providing appropriate access to legitimate users.
+
+#### Frontend-Backend Integration
+
+I built the frontend of this application using React and Next.js. I implemented a authentication context on the frontend that works seamlessly with the backend security system. The AuthContext provider manages user authentication state, handles token storage and refresh, and provides authentication status across the application. I also included user.role in the context to display role-specific content on the same page.
+
+The frontend authentication system includes features like:
+
+- Automatic token verification
+- Secure storage of authentication credentials
+- Multi-tab support for consistent authentication state
+- Automatic redirects for unauthenticated users
+
+#### Secure Logout Mechanism
+
+To prevent unauthorized access after a user session ends, I implemented a secure logout system that:
+
+- Blacklists refresh tokens to prevent reuse
+- Clears local storage of authentication data
+- Updates application state to reflect logged-out status
+- Redirects users to appropriate pages
+
+#### Enhanced User Experience
+
+The permission system improves user experience by:
+
+- Showing users only the resources they have access to
+- Providing clear feedback when access is denied
+- Automatically redirecting users to appropriate pages based on authentication status
+- Supporting different views and capabilities based on user roles
+
+By implementing this authentication and permission system, I've created a secure, role-appropriate environment that protects sensitive data while providing a seamless user experience tailored to each user's role in the educational process.
+
+### 2.3 Frontend design
+
+After designed the database models and authentication/permission controls, I actually felt lost about how many APIs I need to build and what should each API do, so I decided to wireframe the frontend first. In designing the frontend, I had to make decisions about what each page should display and what each button should do. This helped me to design the APIs based on the frontend requirements. I also created API endpoint documentation to ensure that the frontend and backend are in sync, especially the naming of the APIs, the JSON response format, and their permission class.
+
+I built the frontend of my e-learning platform using React with Next.js, employing a modern component-based architecture with TypeScript for type safety. The application follows a clear organizational structure:
+
+- App Directory: Implements Next.js App Router for page-based routing
+- Components Directory: Contains reusable UI components organized by feature
+- Contexts Directory: Manages global state like authentication and user data
+- Utils Directory: Houses utility functions for common operations
+- Lib Directory: Contains core functionality like authentication helpers
+- Types Directory: Defines TypeScript interfaces for type safety
+
+This structure follows the separation of concerns principle, making the codebase maintainable and scalable as new features are added.
+
+#### Key Pages and Features
+
+The frontend includes 6 pages and 3 major components. The pages are:
+
+**1. Welcome Page**
+
+- Implements toggle functionality between login and registration forms
+- Includes authentication state checking to redirect logged-in users
+
+**2. Dashboard Page**
+
+- Acts as the user's personal hub after authentication
+- Displays user profile information with editable status and photo
+- Shows courses the user created or enrolled in
+- Implements course creation functionality for teachers only
+
+**3. Courses Page**
+
+- Presents a grid of all available courses
+- Shows course details including teacher information and enrollment counts
+- Implements enrollment functionality for students only
+
+**4. Course Detail Page**
+
+- Provides view of individual course metadata
+- Implements tab-based navigation for course materials, enrollments, and feedback
+- Features role-based UI that adapts to user permissions, such as course materials management for cours teachers and feedback for enrolled students
+
+**5. Members Page**
+
+- Displays user profiles with status updates
+- Only teachers can access this page
+
+**6. Member Details Page**
+
+- Provides detailed view of individual user profiles
+
+The 3 major components are:
+
+**1. Search component**
+
+- Enable teachers to search for courses and members
+- Enable students to search for courses
+
+**2. Notification component**
+
+- Implement real-time notifications for course enrollments and course material updates
+- Display read status of notifications and mark as read functionality
+
+**3. Chat component**
+
+- Implement real-time chat functionality between users
+- Enable file attachment
+- Display chat sessions (all the users the user has chatted with) and chat history of the active chat session
+
+#### Implementation Highlights
+
+**1. Authentication Integration**
+
+The frontend integrates with the JWT authentication system, handling token storage, refresh, and verification. The application includes automatic redirection for unauthenticated users and maintains consistent authentication state across multiple tabs.
+
+**2. Context-Based State Management**
+
+I implemented custom context providers like AuthContext and UserContext to manage global state, eliminating prop drilling and providing a clean way to access authentication and user data throughout the application.
+
+**3. Role-Based UI Rendering**
+
+The frontend intelligently adapts its interface based on user roles and permissions. For example, teachers see course creation and management options, while students see enrollment buttons. This conditional rendering is implemented at the component level, making the UI intuitive for each user type.
+
+**4. Progressive Enhancement**
+
+I implemented progressive enhancement techniques like optimistic UI updates, which update the interface immediately before API calls complete, making the application feel more responsive. The code also includes fallback states for when data is loading or errors occur.
+
+**5. Error Handling and Feedback**
+
+I implemented error handling with user-friendly error messages and loading states. The application uses toast notifications via the Sonner library to provide immediate feedback for user actions, enhancing the overall user experience.
+
+**6. Component Reusability**
+
+I created UI component using Shadcn UI and Tailwind CSS, which provides consistent styling while maintaining customizability.
+
+This frontend design creates a intuitive user experience while maintaining clean code organization and following modern React best practices. The combination of TypeScript, Next.js, and component-based architecture ensures the application is both maintainable and extensible for future feature additions.
+
+### 2.4 REST API
 
 Endpoints for user data (e.g., /api/users/, /api/courses/).
 Use of Django REST Framework (serializers, viewsets, permissions).
 Example API request/response (e.g., retrieving course details).
 
-## 2.4 Real-Time Features (WebSockets)
+### 2.5 WebSockets
 
 Chat System :
 Implementation using Django Channels (consumers, routing).
@@ -45,30 +258,9 @@ Notifications:
 Student enrollment notifications for teachers.
 Course material updates for students.
 
-## 2.5 Additional Features
+### 2.6 Testing
 
-Course enrollment workflow.
-Feedback system for courses.
-Status updates on user profiles.
-File uploads for course materials (PDFs/images).
-
-## 3. Technical Implementation
-
-## 3.1 Key Code Snippets
-
-Highlight critical code sections (e.g., WebSocket consumer, REST API serializer, model methods).
-Example:
-
-Example: WebSocket consumer for chat
-
-class ChatConsumer(AsyncWebsocketConsumer):
-async def connect(self):
-self.room_name = self.scope['url_route']['kwargs']['course_id']
-await self.channel_layer.group_add(self.room_name, self.channel_name)
-await self.accept()
-
-## 3.2 Testing
-
+![Test results](test-results.png)
 Unit Tests : Describe tests for models, views, and APIs (e.g., test_course_creation, test_student_enrollment).
 Test Coverage : Tools used (e.g., pytest, Django’s test client).
 Instructions to run tests:
@@ -77,33 +269,11 @@ bash
 1
 python manage.py test
 
-## 3.3 Challenges and Solutions
+## 3. Critical Evaluation
 
-Example:
-Challenge : Real-time notifications for course updates.
-Solution : Used Celery for asynchronous tasks + Django Channels for WebSocket communication.
+## 4. Setup and Usage Instructions
 
-## 4. Critical Evaluation
-
-## 4.1 Strengths
-
-Robust role-based access control.
-Scalable WebSocket implementation for real-time features.
-Clean REST API design.
-
-## 4.2 Weaknesses
-
-Limited WebSocket features (e.g., no audio/video streaming).
-Minimal frontend styling (if applicable).
-
-## 4.3 Future Improvements
-
-Add a whiteboard feature for teachers.
-Implement automated grading for assignments.
-
-## 5. Setup and Usage Instructions
-
-## 5.1 Install Backend
+### 4.1 Install Backend
 
 For backend, this project is using:
 
@@ -112,7 +282,7 @@ For backend, this project is using:
 - Django 5.1.3
 - redis 7.2.7
 
-Please open a terminal and run:
+Please download redis, open a terminal and run:
 
 ```bash
 redis-server
@@ -135,7 +305,7 @@ The admin login credentials are:
 - **Username**: admin
 - **Password**: admin
 
-## 5.2 Install Frontend
+### 4.2 Install Frontend
 
 For frontend, open a new terminal and run:
 
@@ -147,7 +317,7 @@ npm run dev
 
 You can then open http://192.168.0.101:3000/ to see the frontend.
 
-If the backend address is not http://127.0.0.1:8000, please modify the NEXT_PUBLIC_API_URL in the client/.env file.
+(If the backend address is not http://127.0.0.1:8000, please modify the NEXT_PUBLIC_API_URL in the client/.env file accordingly.)
 
 Sample user login credentials:
 
@@ -160,7 +330,7 @@ Sample user login credentials:
   - **Username**: student1 / student2 / student3 / student4 / student5 / student6 / student7 / student8 / student9 / student10
   - **Password**: elearning
 
-## 5.2 Running the Tests
+### 4.3 Running the Tests
 
 To run unit tests, open a new terminal and run:
 
@@ -170,22 +340,7 @@ coverage run manage.py test
 coverage report
 ```
 
-## 6. Conclusion
-
-Summary of achievements (e.g., met all R1-R5 requirements).
-Key learning outcomes (Django Channels, REST APIs, database design).
-
-## 7. Appendices
-
-## 7.1 Appendix A: Full ER diagram
-
-![ERD](ERD.jpg)
-
-## 7.2 Appendix B: Test results/output.
-
-![Test results](test-results.png)
-
-## 7.3 Appendix C: requirements.txt contents.
+## 5. requirements.txt
 
 ```txt
 asgiref==3.8.1
