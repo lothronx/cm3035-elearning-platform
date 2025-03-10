@@ -47,7 +47,7 @@ export default function ChatWindow({ chat, onSendMessage }: ChatWindowProps) {
   }, [chat]);
 
   return (
-    <div className="flex flex-2/3 h-full w-full flex-col overflow-hidden">
+    <div className="flex flex-7/10 h-full w-full flex-col overflow-hidden">
       <ScrollArea className="flex-1 px-2 overflow-y-auto webkit-fill-available">
         <div className=" mt-2 space-y-2">
           {chat.map((message: Message) => (

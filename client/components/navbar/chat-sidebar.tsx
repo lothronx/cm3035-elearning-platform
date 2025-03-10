@@ -14,7 +14,7 @@ interface ChatSidebarProps {
 // it also handles the selection of a chat session
 export default function ChatSidebar({ contacts, activeChatId, onSelectChat }: ChatSidebarProps) {
   return (
-    <div className="flex-1/3 border-r">
+    <div className="flex-3/10 border-r">
       <ScrollArea className="h-full">
         <div className="py-2 px-2">
           {contacts.map((chat, index) => (

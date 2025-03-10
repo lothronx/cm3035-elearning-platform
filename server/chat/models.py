@@ -120,9 +120,13 @@ class ChatMessage(models.Model):
                     "id": partner.id,
                     "name": partner.get_full_name() or partner.username,
                     "last_message": (
-                        latest_message.content or "Sent a file"
-                        if latest_message
-                        else ""
+                        latest_message.content[:25] + "..."
+                        if latest_message.content and len(latest_message.content) > 25
+                        else (
+                            (latest_message.content or "Sent a file")
+                            if latest_message
+                            else ""
+                        )
                     ),
                     "is_unread": has_unread,
                     "_timestamp": timestamp,  # Internal field for sorting
