@@ -113,10 +113,14 @@ npm install
 npm run dev
 ```
 
-For backend, open another terminal and run:
+For backend, this project is using:
+
+Please open another terminal and run:
 
 ```bash
 cd server
+conda create --name elearning-project python=3.12.9
+conda activate elearning-project
 pip install -r requirements.txt
 daphne -b 0.0.0.0 -p 8000 elearning.asgi:application
 ```

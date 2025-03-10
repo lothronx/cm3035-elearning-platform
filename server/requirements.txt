@@ -1,4 +1,4 @@
-asgiref @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_47jggogimk/croot/asgiref_1724072471856/work
+asgiref==3.8.1
 astroid==3.3.8
 attrs==25.1.0
 autobahn==24.4.2
@@ -11,7 +11,7 @@ coverage==7.6.12
 cryptography==44.0.2
 daphne==4.1.2
 dill==0.3.9
-Django @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_578q9wrure/croot/django_1731615969522/work
+Django==5.1.3
 django-cleanup==9.0.0
 django-cors-headers==4.7.0
 django-coverage-plugin==3.1.0
@@ -41,7 +41,7 @@ pyOpenSSL==25.0.0
 redis==5.2.1
 service-identity==24.2.0
 setuptools==75.8.0
-sqlparse @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_444946bpsc/croot/sqlparse_1734704466504/work
+sqlparse==0.5.2
 tomlkit==0.13.2
 Twisted==24.11.0
 txaio==23.1.1
