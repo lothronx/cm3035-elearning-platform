@@ -2,30 +2,46 @@ import json
 import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth import get_user_model
-from django.utils import timezone
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
-from .models import ChatMessage
 from asgiref.sync import sync_to_async
-from .services import notify_new_message
-from django.db.models import Q
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
+    """
+    WebSocket consumer for handling real-time chat operations.
+
+    This consumer handles:
+    - WebSocket connections with JWT authentication
+    - Real-time message notifications
+    - Read status updates
+    - Chat session updates
+
+    All chat operations except read status updates should be performed via HTTP API.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.user = None
-        self.group_name = None
+        self.user = None  # Authenticated user
+        self.group_name = None  # Channel group name for this user
 
     async def connect(self):
+        """
+        Handle WebSocket connection.
+
+        Authenticates user using JWT token from query string.
+        Adds user to their personal chat group.
+        Closes connection if authentication fails.
+        """
         # Get token from query string
         query_string = self.scope.get("query_string", b"").decode()
         token = None
         if query_string:
             try:
+                # Parse query string into dictionary
                 params = dict(
                     item.split("=") for item in query_string.split("&") if "=" in item
                 )
@@ -53,14 +69,33 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close()
 
     async def disconnect(self, close_code):
+        """
+        Handle WebSocket disconnection.
+
+        Removes user from their chat group when they disconnect.
+        """
         if self.group_name:
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     @sync_to_async
     def get_user(self, user_id):
+        """
+        Get user by ID.
+
+        Args:
+            user_id: ID of the user to retrieve
+
+        Returns:
+            User: The user object
+        """
         return User.objects.get(id=user_id)
 
     async def receive(self, text_data):
+        """
+        Handle incoming WebSocket messages.
+
+        Only processes read status updates. All other operations should use HTTP API.
+        """
         if not self.user:
             return
 
@@ -72,10 +107,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
             if message_type == "mark_read":
                 await self.handle_mark_read(data)
             else:
-                logger.warning(f"Unsupported WebSocket message type: {message_type}. Use API endpoints instead.")
+                logger.warning(
+                    f"Unsupported WebSocket message type: {message_type}. Use API endpoints instead."
+                )
                 await self.send(
                     text_data=json.dumps(
-                        {"type": "error", "error": "This operation should be performed via HTTP API"}
+                        {
+                            "type": "error",
+                            "error": "This operation should be performed via HTTP API",
+                        }
                     )
                 )
         except json.JSONDecodeError:
@@ -89,7 +129,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
 
     async def handle_mark_read(self, data):
-        """Handle marking messages as read for a specific chat"""
+        """
+        Handle marking messages as read for a specific chat.
+
+        Args:
+            data: Dictionary containing chat_id and other relevant information
+        """
         try:
             chat_id = data.get("chat_id")
             if not chat_id:
@@ -119,49 +164,37 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 )
             )
 
-    @sync_to_async
-    def mark_messages_read(self, chat_id):
-        """Mark all messages from a specific sender as read"""
-        try:
-            # Get the other user (chat partner)
-            other_user = User.objects.get(id=chat_id)
-
-            # Mark all unread messages from this user as read
-            ChatMessage.objects.filter(
-                sender=other_user, receiver=self.user, is_read=False
-            ).update(is_read=True)
-
-            # Check if there are still unread messages from this chat partner
-            has_unread = ChatMessage.objects.filter(
-                sender=other_user, receiver=self.user, is_read=False
-            ).exists()
-
-            # Check if there are any unread messages from any chat partner
-            any_unread_sessions = ChatMessage.objects.filter(
-                receiver=self.user, is_read=False
-            ).exists()
-
-            return has_unread, any_unread_sessions
-
-        except User.DoesNotExist:
-            logger.error(f"User {chat_id} not found")
-            return False, False
-
     async def chat_message(self, event):
-        """Handle chat message event from channel layer"""
+        """
+        Handle chat message event from channel layer.
+
+        Args:
+            event: Dictionary containing message data
+        """
         await self.send(text_data=json.dumps(event))
 
     async def notification_message(self, event):
-        """Handle notification message event from channel layer"""
+        """
+        Handle notification message event from channel layer.
+
+        Args:
+            event: Dictionary containing notification data
+        """
         await self.send(text_data=json.dumps(event))
 
     async def chat_sessions_updated(self, event):
-        """Notify client that chat sessions have been updated and should be refreshed via API"""
+        """
+        Notify client that chat sessions have been updated and should be refreshed via API.
+        """
         await self.send(text_data=json.dumps({"type": "chat_sessions_updated"}))
 
     async def chat_message_notification(self, event):
-        """Send notification for new message received (used when message is created via API)"""
-        await self.send(text_data=json.dumps({
-            "type": "chat_message",
-            "message": event["message"]
-        }))
+        """
+        Send notification for new message received (used when message is created via API).
+
+        Args:
+            event: Dictionary containing message data
+        """
+        await self.send(
+            text_data=json.dumps({"type": "chat_message", "message": event["message"]})
+        )

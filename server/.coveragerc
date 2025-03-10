@@ -8,7 +8,9 @@ omit =
     */settings.py,
     */urls.py,
     */wsgi.py,
+    */asgi.py,
     */manage.py
+    */routing.py
 
 [report]
 exclude_lines =

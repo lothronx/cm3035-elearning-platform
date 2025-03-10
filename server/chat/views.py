@@ -8,7 +8,6 @@ from .models import ChatMessage
 from .serializers import ChatMessageSerializer
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-import datetime
 
 User = get_user_model()
 channel_layer = get_channel_layer()
@@ -24,8 +23,13 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
     - Marking messages as read
     - Initializing new chat sessions
     """
-    permission_classes = [IsAuthenticated]  # Ensures only authenticated users can access chat functionality
-    serializer_class = ChatMessageSerializer  # Serializer class for chat message objects
+
+    permission_classes = [
+        IsAuthenticated
+    ]  # Ensures only authenticated users can access chat functionality
+    serializer_class = (
+        ChatMessageSerializer  # Serializer class for chat message objects
+    )
     http_method_names = ["get", "post"]  # Limit available HTTP methods to GET and POST
 
     def get_queryset(self):
@@ -55,9 +59,6 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
 
         Returns:
             Response: Serialized chat messages between the two users
-
-        Raises:
-            404: If the specified user does not exist
         """
         try:
             other_user = User.objects.get(id=pk)
@@ -93,10 +94,6 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
 
         Returns:
             Response: The created message data if successful
-
-        Raises:
-            400: If receiver ID is invalid or missing, or if message data is invalid
-            404: If the receiver does not exist
         """
         try:
             try:
@@ -179,11 +176,6 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
 
         Returns:
             Response: Success message and unread sessions status
-
-        Raises:
-            400: If chat_id is missing
-            404: If the specified user does not exist
-            500: For any other unexpected errors
         """
         try:
             chat_id = request.data.get("chat_id")
@@ -248,10 +240,6 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
 
         Returns:
             Response: Chat session data including user details and message history
-
-        Raises:
-            400: If chat_id is missing
-            404: If the specified user does not exist
         """
         try:
             chat_id = request.data.get("chat_id")

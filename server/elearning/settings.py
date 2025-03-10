@@ -116,14 +116,24 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Channels Configuration
 ASGI_APPLICATION = "elearning.asgi.application"
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+
+# Use in-memory channel layer for testing
+import sys
+if 'test' in sys.argv:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        }
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [("127.0.0.1", 6379)],
+            },
         },
-    },
-}
+    }
 
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = [
