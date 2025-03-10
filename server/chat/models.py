@@ -85,7 +85,11 @@ class ChatMessage(models.Model):
             user (User): The user to get chat sessions for
 
         Returns:
-            List[dict]: A list of dictionaries with chat session information
+            List[dict]: A list of dictionaries with chat session information including:
+                - id: The chat partner's user ID
+                - name: The chat partner's full name or username
+                - last_message: Content of the last message or 'Sent a file'
+                - is_unread: Whether there are unread messages from this partner
         """
         # Get unique chat partners
         chat_partners = User.objects.filter(
@@ -95,21 +99,45 @@ class ChatMessage(models.Model):
         chat_sessions = []
         for partner in chat_partners:
             # Get the latest message
-            last_message = cls.objects.filter(
-                Q(sender=user, receiver=partner) | Q(sender=partner, receiver=user)
-            ).order_by('-timestamp').first()
+            latest_message = (
+                cls.objects.filter(
+                    Q(sender=user, receiver=partner) | Q(sender=partner, receiver=user)
+                )
+                .order_by("-timestamp")
+                .first()
+            )
 
-            if last_message:
-                has_unread = cls.objects.filter(
-                    sender=partner,
-                    receiver=user,
-                    is_read=False
-                ).exists()
+            # Check for unread messages
+            has_unread = cls.objects.filter(
+                sender=partner, receiver=user, is_read=False
+            ).exists()
 
-                chat_sessions.append({
-                    'chat_partner': partner,
-                    'last_message': last_message,
-                    'has_unread': has_unread
-                })
+            # Add timestamp for sorting
+            timestamp = latest_message.timestamp if latest_message else None
 
-        return sorted(chat_sessions, key=lambda x: x['last_message'].timestamp, reverse=True)
+            chat_sessions.append(
+                {
+                    "id": partner.id,
+                    "name": partner.get_full_name() or partner.username,
+                    "last_message": (
+                        latest_message.content or "Sent a file"
+                        if latest_message
+                        else ""
+                    ),
+                    "is_unread": has_unread,
+                    "_timestamp": timestamp,  # Internal field for sorting
+                }
+            )
+
+        # Sort by timestamp (newest first) and remove the temporary _timestamp field
+        sorted_sessions = sorted(
+            chat_sessions,
+            key=lambda x: x["_timestamp"] or datetime.datetime.min,
+            reverse=True,
+        )
+
+        for session in sorted_sessions:
+            if "_timestamp" in session:
+                del session["_timestamp"]
+
+        return sorted_sessions

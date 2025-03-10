@@ -8,7 +8,6 @@ from .models import ChatMessage
 from .serializers import ChatMessageSerializer
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-import json
 import datetime
 
 User = get_user_model()
@@ -16,96 +15,58 @@ channel_layer = get_channel_layer()
 
 
 class ChatMessageViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
-    serializer_class = ChatMessageSerializer
-    http_method_names = ["get", "post"]
+    """ViewSet for handling chat message operations.
+
+    This ViewSet provides endpoints for managing chat messages between users, including:
+    - Listing chat sessions
+    - Retrieving chat history with specific users
+    - Sending messages (both text and files)
+    - Marking messages as read
+    - Initializing new chat sessions
+    """
+    permission_classes = [IsAuthenticated]  # Ensures only authenticated users can access chat functionality
+    serializer_class = ChatMessageSerializer  # Serializer class for chat message objects
+    http_method_names = ["get", "post"]  # Limit available HTTP methods to GET and POST
 
     def get_queryset(self):
+        """Get the queryset of chat messages for the current user.
+
+        Returns:
+            QuerySet: All chat messages where the current user is either sender or receiver,
+                     ordered by timestamp (newest first).
+        """
         user = self.request.user
+        # Return messages where user is either sender or receiver
         return ChatMessage.objects.filter(Q(sender=user) | Q(receiver=user)).order_by(
             "-timestamp"
         )
 
     def list(self, request):
-        """GET /api/chat/ - Get all chat sessions for current user
-
-        This endpoint now serves as a fallback for when WebSocket is not available.
-        The primary method for getting chat sessions is via WebSocket.
-        """
-        user = request.user
-
-        # Get all users who have chatted with the current user
-        chat_partners = User.objects.filter(
-            Q(messages_sent__receiver=user) | Q(messages_received__sender=user)
-        ).distinct()
-
-        # For each chat partner, get their latest message and unread status
-        chat_sessions = []
-        for partner in chat_partners:
-            latest_message = (
-                ChatMessage.objects.filter(
-                    (Q(sender=user) & Q(receiver=partner))
-                    | (Q(sender=partner) & Q(receiver=user))
-                )
-                .order_by("-timestamp")
-                .first()
-            )
-
-            # Check if there are any unread messages from this partner
-            has_unread = ChatMessage.objects.filter(
-                sender=partner, receiver=user, is_read=False
-            ).exists()
-
-            # Add timestamp to sort by
-            timestamp = latest_message.timestamp if latest_message else None
-            
-            chat_sessions.append(
-                {
-                    "id": partner.id,
-                    "name": partner.get_full_name() or partner.username,
-                    "last_message": (
-                        latest_message.content or "Sent a file"
-                        if latest_message
-                        else ""
-                    ),
-                    "is_unread": has_unread,
-                    "_timestamp": timestamp,  # Internal field for sorting
-                }
-            )
-        
-        # Sort by timestamp (newest first) and remove the temporary _timestamp field
-        sorted_sessions = sorted(
-            chat_sessions, 
-            key=lambda x: x["_timestamp"] or datetime.datetime.min, 
-            reverse=True
-        )
-        
-        for session in sorted_sessions:
-            if "_timestamp" in session:
-                del session["_timestamp"]
-
-        return Response(sorted_sessions)
+        """GET /api/chat/ - Get all chat sessions for current user"""
+        chat_sessions = ChatMessage.get_chat_sessions(request.user)
+        return Response(chat_sessions)
 
     def retrieve(self, request, pk=None):
-        """GET /api/chat/{id}/ - Get chat messages with a specific user
+        """Get chat messages between the current user and another user.
 
-        This endpoint now serves as a fallback for when WebSocket is not available.
-        The primary method for getting chat history is via WebSocket.
+        Args:
+            request: The HTTP request object
+            pk (int): The ID of the other user to get chat messages with
+
+        Returns:
+            Response: Serialized chat messages between the two users
+
+        Raises:
+            404: If the specified user does not exist
         """
         try:
             other_user = User.objects.get(id=pk)
             current_user = request.user
 
             # Get all messages between the two users
-            messages = ChatMessage.objects.filter(
-                (Q(sender=current_user) & Q(receiver=other_user))
-                | (Q(sender=other_user) & Q(receiver=current_user))
-            ).order_by("timestamp")
-
-            # Mark all messages in this chat session as read
-            messages.filter(
-                sender=other_user, receiver=current_user, is_read=False
-            ).update(is_read=True)
+            messages = ChatMessage.get_chat_messages(current_user, other_user).order_by(
+                "timestamp"
+            )
 
             serializer = self.get_serializer(
                 messages, many=True, context={"request": request}
@@ -118,17 +79,24 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
             )
 
     def create(self, request, *args, **kwargs):
-        """POST /api/chat/ - Send a message to a specific user
+        """Send a message to a specific user.
 
-        This endpoint handles both text messages and file uploads.
-        For text-only messages, WebSocket is the preferred method, but this endpoint
-        serves as a fallback when WebSocket is not available.
-        For file uploads, this endpoint is still the primary method.
+        This endpoint handles both text messages and file uploads. While WebSocket
+        is preferred for text-only messages, this endpoint serves as a fallback
+        and remains the primary method for file uploads.
 
-        Body parameters:
-        - receiver: ID of the user to send the message to
-        - content: Text content of the message (optional if file is present)
-        - file: File attachment (optional if content is present)
+        Args:
+            request: The HTTP request object containing:
+                - receiver (int): ID of the user to send the message to
+                - content (str, optional): Text content of the message
+                - file (File, optional): File attachment
+
+        Returns:
+            Response: The created message data if successful
+
+        Raises:
+            400: If receiver ID is invalid or missing, or if message data is invalid
+            404: If the receiver does not exist
         """
         try:
             try:
@@ -166,7 +134,7 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
                         "title": message.file.name.split("/")[-1],
                         "url": message.file.url,
                     }
-                
+
                 message_data = {
                     "id": message.id,
                     "sender_id": request.user.id,
@@ -176,13 +144,13 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
                     "timestamp": message.timestamp.isoformat(),
                     "file": file_data,
                 }
-                
+
                 # Send notification to receiver's WebSocket
                 async_to_sync(channel_layer.group_send)(
                     f"user_{receiver_id}_chat",
                     {"type": "chat_message_notification", "message": message_data},
                 )
-                
+
                 # Notify both sender and receiver to refresh their chat sessions
                 for user_id in [request.user.id, receiver_id]:
                     async_to_sync(channel_layer.group_send)(
@@ -201,111 +169,115 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
                 {"error": "Receiver not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
-    @action(methods=["post"], detail=True)
-    def mark_as_read(self, request, pk=None):
-        """POST /api/chat/{id}/mark_as_read/ - Mark a message as read"""
-        try:
-            message = ChatMessage.objects.get(id=pk)
-            if message.receiver == request.user:
-                message.is_read = True
-                message.save()
-                return Response({"message": "Message marked as read"})
-            else:
-                return Response(
-                    {"error": "You are not the receiver of this message"},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
-        except ChatMessage.DoesNotExist:
-            return Response(
-                {"error": "Message not found"}, status=status.HTTP_404_NOT_FOUND
-            )
-
     @action(methods=["post"], detail=False)
     def mark_chat_read(self, request):
-        """POST /api/chat/mark_chat_read/ - Mark all messages from a specific user as read"""
+        """Mark all messages from a specific user as read.
+
+        Args:
+            request: The HTTP request object containing:
+                - chat_id (int): ID of the user whose messages to mark as read
+
+        Returns:
+            Response: Success message and unread sessions status
+
+        Raises:
+            400: If chat_id is missing
+            404: If the specified user does not exist
+            500: For any other unexpected errors
+        """
         try:
             chat_id = request.data.get("chat_id")
             if not chat_id:
                 return Response(
-                    {"error": "chat_id is required"}, 
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"error": "chat_id is required"}, status=status.HTTP_400_BAD_REQUEST
                 )
-                
+
             # Get the other user
             try:
                 other_user = User.objects.get(id=chat_id)
             except User.DoesNotExist:
                 return Response(
-                    {"error": "User not found"}, 
-                    status=status.HTTP_404_NOT_FOUND
+                    {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
                 )
-                
+
             # Mark all messages from the other user as read
             unread_messages = ChatMessage.objects.filter(
                 sender=other_user, receiver=request.user, is_read=False
             )
             unread_messages.update(is_read=True)
-            
+
             # Check if there are any unread messages left from any sender
             any_unread_sessions = ChatMessage.objects.filter(
                 receiver=request.user, is_read=False
             ).exists()
-            
+
             # Send WebSocket notification about read status update
             async_to_sync(channel_layer.group_send)(
                 f"user_{request.user.id}_chat",
                 {
-                    "type": "chat_message", 
+                    "type": "chat_message",
                     "message": {
                         "type": "read_status_update",
                         "chat_id": chat_id,
                         "has_unread": False,
                         "all_read": not any_unread_sessions,
                         "any_unread_sessions": any_unread_sessions,
-                    }
+                    },
+                },
+            )
+
+            return Response(
+                {
+                    "message": "All messages marked as read",
+                    "any_unread_sessions": any_unread_sessions,
                 }
             )
-            
-            return Response({
-                "message": "All messages marked as read",
-                "any_unread_sessions": any_unread_sessions
-            })
-            
+
         except Exception as e:
             return Response(
-                {"error": str(e)}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-            
+
     @action(methods=["post"], detail=False)
     def initialize(self, request):
-        """POST /api/chat/initialize/ - Initialize a chat with a specific user"""
+        """Initialize a chat session with a specific user.
+
+        Args:
+            request: The HTTP request object containing:
+                - chat_id (int): ID of the user to initialize chat with
+
+        Returns:
+            Response: Chat session data including user details and message history
+
+        Raises:
+            400: If chat_id is missing
+            404: If the specified user does not exist
+        """
         try:
             chat_id = request.data.get("chat_id")
             if not chat_id:
                 return Response(
-                    {"error": "chat_id is required"}, 
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"error": "chat_id is required"}, status=status.HTTP_400_BAD_REQUEST
                 )
-                
+
             # Check if user exists
             try:
                 chat_partner = User.objects.get(id=chat_id)
             except User.DoesNotExist:
                 return Response(
-                    {"error": "User not found"}, 
-                    status=status.HTTP_404_NOT_FOUND
+                    {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
                 )
-                
+
             # Return success - no need to create any records yet,
             # actual messages will be created when the user sends something
-            return Response({
-                "id": chat_partner.id,
-                "name": chat_partner.get_full_name() or chat_partner.username,
-            })
-            
+            return Response(
+                {
+                    "id": chat_partner.id,
+                    "name": chat_partner.get_full_name() or chat_partner.username,
+                }
+            )
+
         except Exception as e:
             return Response(
-                {"error": str(e)}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
