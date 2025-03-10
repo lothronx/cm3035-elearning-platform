@@ -245,9 +245,222 @@ This frontend design creates a intuitive user experience while maintaining clean
 
 ### 2.4 REST API
 
-Endpoints for user data (e.g., /api/users/, /api/courses/).
-Use of Django REST Framework (serializers, viewsets, permissions).
-Example API request/response (e.g., retrieving course details).
+I used Django REST Framework to provide a robust interface between the frontend and backend of my e-learning platform. My API architecture is organized into a main router for top-level resources and nested routers for related resources, creating a logical and intuitive URL structure. The API endpoints are centralized in `/server/api/api.py` while the `views.py` files are separated in the corresponding module directories.
+
+#### 1. Authentication Endpoints
+
+```
+POST /api/auth/login/ - JWT token acquisition
+POST /api/auth/register/ - User registration
+POST /api/auth/refresh/ - JWT token refresh
+POST /api/auth/verify/ - JWT token verification
+POST /api/auth/logout/ - User logout with token blacklisting
+```
+
+#### 2. User Management Endpoints
+
+```
+# dashboard
+GET /api/dashboard/ - Get current user dashboard data
+PATCH /api/dashboard/patch-status/ - Update user status
+PATCH /api/dashboard/patch-photo/ - Update user profile photo
+
+# members
+GET /api/members/ - List all users (teachers only)
+GET /api/members/{id}/ - Retrieve user details
+GET /api/members/search/ - Search for users by name or username (teachers only)
+```
+
+#### 3. Course Management Endpoints
+
+```
+GET /api/courses/ - List all active courses
+POST /api/courses/ - Create a new course (teachers only)
+GET /api/courses/{id}/ - Retrieve course metadata
+PATCH /api/courses/{id}/ - Update course metadata (course teacher only)
+PATCH /api/courses/{id}/toggle_activation/ - Activate/deactivate course (course teacher only)
+GET /api/courses/search/ - Search courses
+```
+
+#### 4. Course Resources Endpoints (Nested)
+
+```
+# materials
+GET /api/courses/{course_id}/materials/ - List course materials (course teacher and enrolled students only)
+POST /api/courses/{course_id}/materials/ - Add course material (course teacher only)
+DELETE /api/courses/{course_id}/materials/{id}/ - Delete course material (course teacher only)
+
+# feedback
+GET /api/courses/{course_id}/feedback/ - List course feedback (course teacher and enrolled students only)
+POST /api/courses/{course_id}/feedback/ - Add feedback (enrolled students only)
+DELETE /api/courses/{course_id}/feedback/{id}/ - Delete feedback (enrolled students only)
+
+# enrollments
+GET /api/courses/{course_id}/enrollments/ - List course enrollments (course teacher and enrolled students only)
+DELETE /api/courses/{course_id}/enrollments/ - Delete course enrollments (course teacher only)
+
+# student enrollment
+POST /api/courses/{course_id}/student-enrollment/ - Enroll in course (students only)
+DELETE /api/courses/{course_id}/student-enrollment/ - Leave course (students only)
+
+PATCH /api/courses/{course_id}/progress/toggle_completion/ - Toggle course completion (enrolled student only)
+```
+
+#### 5. Communication Endpoints
+
+```
+# chat
+GET /api/chat/ - List chat sessions
+POST /api/chat/ - Send a message
+GET /api/chat/{id}/ - Retrieve chat session
+POST api/chat/mark_chat_read/ - Mark chat as read
+POST /api/chat/initialize/ - Initialize chat session
+
+# notifications
+GET /api/notifications/ - List user notifications
+PATCH /api/notifications/{id}/ - Mark notification as read
+POST /api/notifications/mark_all_read/ - Mark all notifications as read
+```
+
+(The JSON response format is too long to be shown here.)
+
+This hierarchical API structure provides a clear and consistent interface for the frontend to interact with the backend, with each endpoint having specific permission requirements based on user roles and resource ownership.
+
+#### Implementation Example: CourseViewSet
+
+The CourseViewSet in course_views.py exemplifies my approach to implementing ViewSets with dynamic permission handling and context-aware serialization:
+
+```python
+class CourseViewSet(viewsets.ModelViewSet):
+"""
+API endpoint for managing courses.
+"""
+serializer_class = CourseSerializer
+permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Base queryset excluding admin users
+        base_queryset = Course.objects.exclude(
+            Q(teacher__is_superuser=True) | Q(teacher__is_staff=True)
+        ).order_by("-updated_at")
+
+        # For list view, show only active courses
+        if self.action == "list":
+            return base_queryset.filter(is_active=True)
+
+        return base_queryset
+```
+
+This ViewSet demonstrates several key implementation patterns:
+
+**1. Dynamic Permission Handling**
+
+I implemented action-specific permission checks that adapt based on the requested operation:
+
+```python
+def get_permissions(self):
+"""Set permissions based on action type."""
+if self.action == "create":
+self.permission_classes = [IsAuthenticated, IsTeacher]
+elif self.action in ["update", "partial_update", "destroy"]:
+self.permission_classes = [IsAuthenticated, IsCourseTeacher]
+else:
+self.permission_classes = [IsAuthenticated]
+
+    return super().get_permissions()
+```
+
+This ensures that only teachers can create courses, only course teachers can modify them, and all authenticated users can view them, implementing a fine-grained access control system that enforces business rules at the API level.
+
+**2. Context-Aware Serialization**
+
+The ViewSet selects the appropriate serializer based on the context of the request:
+
+```python
+def get_serializer_class(self):
+"""Return appropriate serializer based on the request method and action."""
+if self.action == "list":
+return CourseListSerializer # Lightweight serializer for lists
+elif self.action == "retrieve":
+return CourseDetailSerializer # Detailed serializer for single course
+return CourseSerializer # Default serializer for other operations
+```
+
+This approach optimizes performance by returning only necessary fields for each context, reducing payload size for list views while providing data for detail views.
+
+**3. Custom Actions**
+
+I extended the standard CRUD operations with custom actions using DRF's @action decorator:
+
+```python
+@action(
+detail=True,
+methods=["patch"],
+permission_classes=[IsAuthenticated, IsCourseTeacher],
+)
+def toggle_activation(self, request, pk=None):
+"""Toggle the activation status of a course."""
+course = self.get_object()
+course.is_active = not course.is_active
+course.save()
+
+    return Response({
+        "status": "success",
+        "is_active": course.is_active,
+        "message": f'Course {"activated" if course.is_active else "deactivated"} successfully',
+    }, status=status.HTTP_200_OK)
+```
+
+This pattern allows me to implement non-standard operations while maintaining RESTful principles and consistent permission handling.
+
+**4. Enhanced Object Retrieval**
+
+I overrode the get_object method to implement additional permission checks beyond what DRF provides by default:
+
+```python
+def get_object(self):
+"""Override get_object to enforce permissions."""
+obj = super().get_object()
+user = self.request.user
+
+    # Only course teacher can access inactive courses
+    if not obj.is_active and obj.teacher != user:
+        self.permission_denied(
+            self.request,
+            message="You do not have permission to access this inactive course.",
+        )
+
+    self.check_object_permissions(self.request, obj)
+    return obj
+```
+
+This ensures that inactive courses are only accessible to their creators, adding a layer of business logic enforcement that complements the permission system.
+
+#### API Design Principles
+
+Throughout my API implementation, I followed several key design principles:
+
+- Consistent Response Format
+
+All API responses follow a consistent structure, making it easier for the frontend to parse and handle responses.
+
+- Proper HTTP Status Codes
+
+Each endpoint returns appropriate HTTP status codes (200 for success, 400 for bad requests, 403 for permission issues, etc.), following REST conventions.
+
+- Documentation
+
+All ViewSets and methods include detailed docstrings explaining their purpose, parameters, and return values.
+
+- Optimized Queries
+
+ViewSets implement optimized database queries using Django's ORM features like select_related and prefetch_related to minimize database hits.
+
+- Validation and Error Handling
+
+All input data is validated through serializers, with clear error messages returned when validation fails.
+
+This API implementation provides a solid foundation for the frontend-backend communication in my e-learning platform, ensuring that data is transferred securely and efficiently while enforcing the application's business rules and permission requirements.
 
 ### 2.5 WebSockets
 
@@ -261,13 +474,8 @@ Course material updates for students.
 ### 2.6 Testing
 
 ![Test results](test-results.png)
-Unit Tests : Describe tests for models, views, and APIs (e.g., test_course_creation, test_student_enrollment).
-Test Coverage : Tools used (e.g., pytest, Django’s test client).
-Instructions to run tests:
-bash
-复制
-1
-python manage.py test
+
+
 
 ## 3. Critical Evaluation
 
