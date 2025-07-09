@@ -1,147 +1,107 @@
 # 🎓 eLearning Platform
 
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
+[![Django REST Framework](https://img.shields.io/badge/Django_REST-ff1709?style=for-the-badge&logo=django&logoColor=white)](https://www.django-rest-framework.org/)
+[![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
+[![WebSocket](https://img.shields.io/badge/WebSocket-4E9A06?style=for-the-badge&logo=websocket&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
+[![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=JSON%20web%20tokens&logoColor=white)](https://jwt.io/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+
+> A full-stack e-learning platform with real-time chat and notifications, role-based access control, and a responsive, modern UI.
+
+
+## 🎬 Live Demo
+  
 <div align="center">
 
-![Python](https://img.shields.io/badge/Python-3.12-3776ab?style=for-the-badge&logo=python&logoColor=white)
-![Django](https://img.shields.io/badge/Django-5.1.3-092e20?style=for-the-badge&logo=django&logoColor=white)
-![React](https://img.shields.io/badge/React-18-61dafb?style=for-the-badge&logo=react&logoColor=black)
-![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=next.js&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178c6?style=for-the-badge&logo=typescript&logoColor=white)
-![WebSocket](https://img.shields.io/badge/WebSocket-Real--time-ff6b6b?style=for-the-badge&logo=websocket&logoColor=white)
+[![Watch Demo](https://img.shields.io/badge/Watch-Demo-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=rUQ9CwhClLI&ab_channel=WuYue)
 
-### 🚀 A modern, full-stack e-learning platform with real-time chat and notifications
-
-### ✨ Real-time Learning • Role-based Access • Modern UI/UX
-
-</div>
-
----
-
-## 📖 Table of Contents
-
-- [🎬 Demo Video](#-demo-video)
-- [✨ Features](#-features)
-- [🏗️ Architecture](#️-architecture)
-- [🔐 Authentication & Security](#-authentication--security)
-- [💻 Frontend Design](#-frontend-design)
-- [🌐 REST API](#-rest-api)
-- [⚡ WebSockets](#-websockets)
-- [🧪 Testing](#-testing)
-- [🚀 Quick Start](#-quick-start)
-- [📊 Evaluation](#-evaluation)
-- [📄 Dependencies](#-dependencies)
-- [📜 License & Acknowledgments](#-license--acknowledgments)
-
-## 🎬 Demo Video
-
-<div align="center">
-
-[![eLearning Platform Demo](https://img.youtube.com/vi/rUQ9CwhClLI/maxresdefault.jpg)](https://www.youtube.com/watch?v=rUQ9CwhClLI&t=90s&ab_channel=WuYue)
-
-**🎥 [Watch the Full Demo on YouTube](https://www.youtube.com/watch?v=rUQ9CwhClLI&t=90s&ab_channel=WuYue)**
+[![Watch Demo](https://img.youtube.com/vi/rUQ9CwhClLI/maxresdefault.jpg)](https://www.youtube.com/watch?v=rUQ9CwhClLI&ab_channel=WuYue)
 
 _Experience the platform's real-time features, role-based interfaces, and seamless user interactions_
 
 </div>
 
-## ✨ Features
+## 🚀 Key Features
 
-<div align="center">
+### 🔐 **Authentication & Security**
+- JWT-based authentication with refresh token support
+- Role-based access control (Teachers & Students)
+- Fine-grained permissions for resource ownership
+- Secure logout with token blacklisting
 
-### 🎯 **Complete Learning Management Solution**
+### 👥 **User Management**
+- Comprehensive user profiles with status updates
+- Member directory and search functionality
+- Role-specific dashboards and interfaces
+- Profile photo management
 
-</div>
+### 📖 **Course Management**
+- Create, update, and manage courses (Teachers)
+- Course enrollment system for students
+- File-based course materials with organized storage
+- Progress tracking and completion status
+- Course activation/deactivation functionality
 
-<table>
-<tr>
-<td width="50%" align="center">
+### 💬 **Real-time Communication**
+- WebSocket-powered chat system with file attachments
+- Instant notifications for course activities
+- Hybrid API-WebSocket model for reliable message delivery
+- Real-time enrollment and material update notifications
 
-### 🎓 **Core Functionality**
-
-![Learning](https://img.shields.io/badge/Learning-Management-blue?style=flat-square)
-
-- 👥 **Role-based Access Control** - Separate interfaces for teachers and students
-- 📚 **Course Management** - Create, manage, and enroll in courses
-- 📝 **Real-time Chat** - Instant messaging with file attachments
-- 🔔 **Live Notifications** - Real-time updates for course activities
-- 📊 **Progress Tracking** - Monitor student engagement and completion
-
-</td>
-<td width="50%" align="center">
-
-### 🛡️ **Security & Authentication**
-
-![Security](https://img.shields.io/badge/Security-Enterprise_Grade-green?style=flat-square)
-
-- 🔐 **JWT Authentication** - Secure token-based authentication
-- 🛂 **Permission System** - Fine-grained access control
-- 🔒 **Secure File Uploads** - Organized media management
-- 🚪 **Secure Logout** - Token blacklisting and session management
-
-</td>
-</tr>
-<tr>
-<td width="50%" align="center">
-
-### 🎨 **Modern UI/UX**
-
-![UI](https://img.shields.io/badge/UI/UX-Modern_Design-purple?style=flat-square)
-
-- 📱 **Responsive Design** - Built with Tailwind CSS
-- ⚡ **Real-time Updates** - WebSocket-powered live features
-- 🎭 **Role-adaptive Interface** - Dynamic UI based on user permissions
-- 🎯 **Search Functionality** - Find courses and members quickly
-
-</td>
-<td width="50%" align="center">
-
-### ⚡ **Performance & Scalability**
-
-![Performance](https://img.shields.io/badge/Performance-Optimized-orange?style=flat-square)
-
-- 🔄 **Real-time Communication** - WebSocket + Redis integration
-- 📊 **Database Optimization** - Strategic indexing and queries
-- 🧪 **90% Test Coverage** - Reliable and maintainable code
-- 🏗️ **Modular Architecture** - Scalable and extensible design
-
-</td>
-</tr>
-</table>
+### 🔍 **Advanced Features**
+- Global search functionality for courses and members
+- Course feedback and rating system
+- Read/unread status tracking for messages and notifications
+- Responsive design with modern UI components
 
 ## 🏗️ Architecture
 
-This e-learning platform uses a **modular architecture** with clear separation of concerns:
+### **Backend Architecture**
+- **Modular Design**: Five distinct modules (Accounts, Courses, Notifications, Chat, API)
+- **Database Patterns**: Normalized relationships, soft deletion, metadata tracking
+- **API Structure**: Hierarchical routing with nested resources
+- **Real-time Features**: Django Channels with Redis for WebSocket support
 
-### 🔧 Tech Stack
+### **Frontend Architecture**
+- **Component-Based**: Organized by feature with reusable UI components
+- **State Management**: Context-based global state with AuthContext and UserContext
+- **Type Safety**: Full TypeScript implementation
+- **Modern UI**: Shadcn UI components with Tailwind CSS styling
 
-<div align="center">
+### **Security Implementation**
+- Custom permission classes for fine-grained access control
+- JWT authentication for both HTTP and WebSocket connections
+- Resource ownership verification
+- Input validation and error handling
 
-|                              **Backend Technologies**                              |                                  **Frontend Technologies**                                   |                               **DevOps & Testing**                                |
-| :--------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------: |
-| ![Django](https://img.shields.io/badge/Django-5.1.3-092e20?style=flat&logo=django) |         ![React](https://img.shields.io/badge/React-18-61dafb?style=flat&logo=react)         |  ![Coverage](https://img.shields.io/badge/Coverage-90%25-brightgreen?style=flat)  |
-|           ![DRF](https://img.shields.io/badge/DRF-3.15.2-red?style=flat)           |      ![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat&logo=next.js)       |  ![Factory Boy](https://img.shields.io/badge/Factory_Boy-3.3.3-blue?style=flat)   |
-|     ![Channels](https://img.shields.io/badge/Channels-4.2.0-green?style=flat)      | ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178c6?style=flat&logo=typescript) |  ![Redis](https://img.shields.io/badge/Redis-7.2.7-dc382d?style=flat&logo=redis)  |
-|          ![JWT](https://img.shields.io/badge/JWT-5.5.0-000000?style=flat)          |  ![Tailwind](https://img.shields.io/badge/Tailwind-3.4-38b2ac?style=flat&logo=tailwind-css)  | ![Python](https://img.shields.io/badge/Python-3.12-3776ab?style=flat&logo=python) |
+## 🛠️ Technical Stack
 
-</div>
+### **Frontend**
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + Shadcn UI
+- **State Management**: React Context API
+- **Authentication**: JWT with automatic refresh
 
-**🏗️ Architecture Highlights:**
+### **Backend**
+- **Framework**: Django + Django REST Framework
+- **Real-time**: Django Channels + Redis
+- **Database**: SQLite (Development)
+- **Authentication**: JWT with SimpleJWT
+- **Testing**: Django Test Framework + Factory Boy
 
-- 🐍 **Django 5.1.3** - Robust web framework with modern features
-- 🔌 **Django REST Framework** - Comprehensive API development
-- � **Django Channels** - WebSocket support for real-time features
-- ⚛️ **React + Next.js 14** - Modern frontend with SSR capabilities
-- 📘 **TypeScript** - Type-safe development across the stack
-- 🗃️ **Redis** - High-performance message broker and caching
+### **DevOps & Tools**
+- **API Testing**: Comprehensive test suite with 90% coverage
+- **Version Control**: Git
+- **Development**: VS Code with modern tooling
 
-### 🏛️ Database Design
+## 📊 Database Design
 
-<div align="center">
-
-![ERD](ERD.jpg)
-_Entity Relationship Diagram_
-
-</div>
+![Database ERD](ERD.jpg)
 
 The platform implements **5 core modules** with normalized relationships:
 
@@ -600,87 +560,46 @@ coverage report
 | 🚀 **Deployment** | Local development      | Production deployment setup           |
 | 🔒 **Security**   | Basic validation       | Advanced rate limiting & validation   |
 
-### 🚀 Future Roadmap
+## 🎓 What I Learned
 
-<details>
-<summary><b>🎯 Short-term Goals</b></summary>
+This project provided invaluable learning experiences across multiple domains:
 
-- 🐳 **Docker containerization** for easy deployment
-- 📱 **Mobile-responsive design** improvements
-- 🔍 **Advanced search** with filtering
-- 📈 **Analytics dashboard** for teachers
-- 🔔 **Email notifications** integration
+### **Technical Skills**
+- **Full-Stack Development**: Gained deep understanding of modern web application architecture from database design to user interface implementation
+- **Real-time Technologies**: Mastered WebSocket implementation and hybrid communication models for responsive user experiences
+- **Authentication Systems**: Implemented robust JWT-based authentication with role-based permissions and security best practices
+- **API Design**: Developed RESTful APIs following industry standards with proper documentation and error handling
 
-</details>
+### **Development Practices**
+- **Modular Architecture**: Learned the importance of separation of concerns and modular design for maintainable codebases
+- **Test-Driven Development**: Understood the value of comprehensive testing and the impact of test coverage on code quality
+- **Database Design**: Applied normalization principles and performance optimization techniques in real-world scenarios
+- **Modern Frontend Patterns**: Implemented context-based state management and component composition in React
 
-<details>
-<summary><b>🌟 Long-term Vision</b></summary>
+### **Project Management Insights**
+- **Planning Importance**: Realized the critical value of thorough project planning and requirements documentation before implementation
+- **Iterative Development**: Experienced the challenges of feature modification post-implementation and the cascading effects on dependencies
+- **Code Quality**: Learned that writing clean, maintainable code from the start saves significant debugging and refactoring time
 
-- 🤖 **AI-powered** content recommendations
-- 🎥 **Video streaming** for lectures
-- 📊 **Advanced analytics** and progress tracking
-- 🌍 **Multi-language** support
-- 🔗 **Third-party integrations** (Google Classroom, Zoom)
+### **Problem-Solving Skills**
+- **Complex System Integration**: Successfully integrated multiple technologies (REST APIs, WebSockets, authentication) into a cohesive platform
+- **Performance Optimization**: Implemented strategies for efficient database queries and optimized API responses
+- **User Experience Focus**: Balanced technical requirements with user-friendly interface design and responsive functionality
 
-</details>
+## 📄 License
 
-### 🎓 Key Learnings
-
-> 💡 **Planning is Everything**: Thorough requirements analysis upfront prevents costly refactoring later
->
-> 🧪 **Test-Driven Development**: Writing tests first improves code quality and reduces debugging time
->
-> 🏗️ **Modular Architecture**: Clean separation of concerns makes the codebase maintainable and scalable
-
-## 📄 Dependencies
-
-<details>
-<summary><b>📦 Backend Requirements (requirements.txt)</b></summary>
-
-```txt
-Django==5.1.3
-djangorestframework==3.15.2
-djangorestframework_simplejwt==5.5.0
-channels==4.2.0
-channels_redis==4.2.1
-django-cors-headers==4.7.0
-redis==5.2.1
-daphne==4.1.2
-pillow==11.1.0
-coverage==7.6.12
-factory_boy==3.3.3
-# ... see full list in requirements.txt
-```
-
-</details>
-
-## 📜 License & Acknowledgments
-
-<div align="center">
-
-### 🎓 **Academic Project - CM3035 Advanced Web Development**
-
-[![University](https://img.shields.io/badge/University-of_London-blue?style=for-the-badge)](https://www.london.ac.uk/)
-[![Course](https://img.shields.io/badge/Course-CM3035-green?style=for-the-badge)](https://www.coursera.org/learn/advanced-web-development)
-
-**Built with ❤️ by [Yue Wu](https://github.com/lothronx)**
-
-_Demonstrating modern full-stack development practices, real-time technologies, and comprehensive testing strategies_
-
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=for-the-badge&logo=github)](https://github.com/lothronx)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/yuewuxd/)
-[![YouTube](https://img.shields.io/badge/YouTube-Subscribe-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/@wu_yue)
-
-</div>
+This project is available for educational and personal use. Please respect academic integrity guidelines when referencing this work.
 
 ---
 
-<div align="center">
+## 📬 Connect With Me
 
-### ⭐ **If this project helped you, please give it a star!** ⭐
+Built with ❤️ by **Yue Wu**
 
-[![Star on GitHub](https://img.shields.io/github/stars/lothron/cm3035-elearning-platform?style=social)](https://github.com/lothronx/cm3035-elearning-platform)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/yuewuxd/)
 
-</div>
+*This project demonstrates advanced web development skills and modern software engineering practices. If you found it interesting or have questions about the implementation, feel free to connect!*
 
-</div>
+
+
+
